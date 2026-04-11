@@ -143,10 +143,11 @@
     }
     .protein-btn {
       display: flex; flex-direction: column; align-items: center; gap: 5px;
-      padding: 12px 4px 10px;
+      padding: 12px 4px 10px; min-height: 64px;
       background: var(--surface);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-md);
+      touch-action: manipulation;
       transition: all 200ms var(--ease);
     }
     .protein-btn:active { transform: scale(0.96); }
@@ -264,6 +265,29 @@
       border-color: var(--amber);
       color: var(--amber);
     }
+
+    /* ─── ENV COLLAPSIBLE ─── */
+    .env-collapse-toggle {
+      width: 100%; display: flex; align-items: center; gap: 8px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color 200ms var(--ease);
+      touch-action: manipulation;
+    }
+    .env-collapse-toggle[aria-expanded="true"] { border-color: var(--amber); }
+    .env-collapse-toggle .step-label { flex: 1; margin-bottom: 0 !important; }
+    .env-collapse-summary {
+      font-size: 11px; color: var(--text-muted); font-weight: 500;
+      white-space: nowrap;
+    }
+    .env-chevron {
+      color: var(--text-faint); font-size: 12px;
+      transition: transform 200ms var(--ease);
+    }
+    .env-collapse-toggle[aria-expanded="true"] .env-chevron { transform: rotate(90deg); }
 
     /* ─── ENV TOGGLES ─── */
     .env-row {
@@ -458,6 +482,15 @@
       display: none;
     }
     .alarm-banner.visible { display: block; }
+    @media (min-width: 768px) {
+      .app-shell { max-width: 600px; }
+      .content { padding: 32px 32px 80px; }
+      .protein-grid { grid-template-columns: repeat(8, 1fr); }
+    }
+    @media (hover: hover) {
+      .protein-btn:hover { background: color-mix(in oklch, var(--amber) 8%, var(--surface)); border-color: var(--amber); }
+      .cut-btn:hover { background: color-mix(in oklch, var(--amber) 8%, var(--surface)); border-color: var(--amber); color: var(--amber); }
+    }
     @keyframes slide-up {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -803,10 +836,10 @@
       </div>
     </div>
     <nav class="tabs" role="tablist" aria-label="App sections">
-      <button class="tab-btn active" id="tab-timer"     role="tab" aria-selected="true"  onclick="switchTab('timer')">Timer</button>
-      <button class="tab-btn"        id="tab-guide"     role="tab" aria-selected="false" onclick="switchTab('guide')">Temp Guide</button>
-      <button class="tab-btn"        id="tab-multisteak" role="tab" aria-selected="false" onclick="switchTab('multisteak')">Multi-Steak</button>
-      <button class="tab-btn"        id="tab-favorites" role="tab" aria-selected="false" onclick="switchTab('favorites')">Favorites</button>
+      <button class="tab-btn active" id="tab-timer"      role="tab" aria-selected="true"  onclick="switchTab('timer')">Timer</button>
+      <button class="tab-btn"        id="tab-multisteak" role="tab" aria-selected="false" onclick="switchTab('multisteak')">Grill Queue</button>
+      <button class="tab-btn"        id="tab-favorites"  role="tab" aria-selected="false" onclick="switchTab('favorites')">Favorites</button>
+      <button class="tab-btn"        id="tab-guide"      role="tab" aria-selected="false" onclick="switchTab('guide')">Temp Guide</button>
     </nav>
   </header>
 
@@ -821,7 +854,7 @@
 
         <!-- Step 1: Protein -->
         <div class="section">
-          <p class="step-label"><span class="step-dot"></span>Step 1 — Protein</p>
+          <p class="step-label"><span class="step-dot"></span>What Are You Grilling?</p>
           <div class="protein-grid" id="protein-grid">
             <button class="protein-btn" id="cat-beef"    onclick="selectProtein('beef')"    aria-pressed="false">
               <span class="icon">🥩</span><span class="label">Beef</span>
@@ -852,13 +885,13 @@
 
         <!-- Step 2: Cut -->
         <div class="section hidden" id="sect-cut">
-          <p class="step-label"><span class="step-dot"></span>Step 2 — Cut</p>
+          <p class="step-label"><span class="step-dot"></span>Which Cut / Style?</p>
           <div class="cut-grid" id="cut-grid"></div>
         </div>
 
         <!-- Step 3: Thickness -->
         <div class="section hidden" id="sect-thickness">
-          <p class="step-label"><span class="step-dot"></span>Step 3 — Thickness</p>
+          <p class="step-label"><span class="step-dot"></span>How Thick?</p>
           <div class="slider-row">
             <input type="range" class="slider-track" id="thickness-slider"
               min="0.5" max="2.5" step="0.25" value="1.0"
@@ -869,7 +902,7 @@
 
         <!-- Step 4: Heat -->
         <div class="section hidden" id="sect-heat">
-          <p class="step-label"><span class="step-dot"></span>Step 4 — Grill Heat</p>
+          <p class="step-label"><span class="step-dot"></span>Grill Heat</p>
           <div class="heat-row">
             <button class="heat-btn" id="heat-medium" onclick="selectHeat('medium', 1.0)" aria-pressed="false">
               <span class="heat-icon">🔥</span>
@@ -886,14 +919,18 @@
 
         <!-- Step 5: Doneness -->
         <div class="section hidden" id="sect-doneness">
-          <p class="step-label"><span class="step-dot"></span>Step 5 — Doneness</p>
+          <p class="step-label"><span class="step-dot"></span>Doneness</p>
           <div class="doneness-row" id="doneness-row"></div>
         </div>
 
         <!-- Environment -->
         <div class="section hidden" id="sect-env">
-          <p class="step-label"><span class="step-dot"></span>Environment</p>
-          <div class="env-row">
+          <button class="env-collapse-toggle" id="env-toggle-btn" onclick="toggleEnvCollapse()" aria-expanded="false">
+            <p class="step-label" style="margin-bottom:0"><span class="step-dot"></span>Environment</p>
+            <span class="env-collapse-summary" id="env-summary">Standard conditions</span>
+            <span class="env-chevron" id="env-chevron">▸</span>
+          </button>
+          <div class="env-row" id="env-row-content" style="display:none; margin-top:12px;">
             <label class="env-toggle" for="toggle-winter">
               <div class="env-toggle-info">
                 <span class="env-toggle-label">❄️ Cold Weather Mode</span>
@@ -916,7 +953,7 @@
                 <span class="toggle-thumb"></span>
               </div>
             </label>
-          </div>
+          </div><!-- /env-row-content -->
         </div>
 
         <!-- Results -->
@@ -986,13 +1023,13 @@
     <!-- ══ MULTI-STEAK TAB ══ -->
     <div class="tab-panel hidden" id="panel-multisteak" role="tabpanel">
       <div class="steaks-header">
-        <p class="step-label" style="margin-bottom:0"><span class="step-dot"></span>Multi-Steak Tracker</p>
-        <button class="btn-add-steak" id="btn-add-steak" onclick="addSteakLane()" aria-label="Add another steak">
-          + Add Steak
+        <p class="step-label" style="margin-bottom:0"><span class="step-dot"></span>Grill Queue</p>
+        <button class="btn-add-steak" id="btn-add-steak" onclick="addSteakLane()" aria-label="Add another item">
+          + Add to Queue
         </button>
       </div>
       <p class="multi-steak-hint" id="multi-steak-hint">
-        Configure a cook on the Timer tab first,<br>then add up to 4 steaks here with independent timers.
+        Configure a cook on the Timer tab first,<br>then add up to 4 items here with independent timers.
       </p>
       <div id="steak-lanes"></div>
     </div>
@@ -1250,27 +1287,16 @@ const state = {
 const times = { sideA:0, sideB:0, finish:0, rest:0 };
 
 // Persistent favorites (localStorage for GitHub Pages / browser use)
-const STORAGE_KEY = `${location.pathname.includes('/grill-master') ? 'grill-master' : 'grill-master'}:favorites:v1`;
 let favorites = [];
 let nextFavId = 1;
 
 function loadFavoritesFromStorage() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    favorites = raw ? JSON.parse(raw) : [];
-    nextFavId = favorites.reduce((m, f) => Math.max(m, Number(f.id) || 0), 0) + 1;
-  } catch (e) {
-    favorites = [];
-    nextFavId = 1;
-  }
+  favorites = [];
+  nextFavId = 1;
 }
 
 function saveFavoritesToStorage() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-  } catch (e) {
-    showToast('Storage unavailable in this browser');
-  }
+  // in-memory only
 }
 
 // Active cook
@@ -1314,13 +1340,9 @@ function selectProtein(key) {
   buildCuts(key);
   show('sect-cut');
 
-  // Validate doneness for this protein
   const opts = MEAT_DB[key].doneness;
-  if (!state.doneness || !opts.find(o => o.label===state.doneness)) {
-    state.doneness  = opts[0].label;
-    state.doneTemp  = opts[0].temp;
-    state.doneFactor = opts[0].factor;
-  }
+  const useOpt = opts.find(o => o.label === state.doneness) || opts[0];
+  state.doneness = useOpt.label; state.doneTemp = useOpt.temp; state.doneFactor = useOpt.factor;
   buildDoneness(key);
 
   show('sect-thickness');
@@ -1350,7 +1372,16 @@ function buildCuts(key) {
     grid.firstChild.classList.add('active');
     grid.firstChild.setAttribute('aria-pressed', 'true');
   }
+  // Show/hide thickness based on selected cut
+  if (NO_THICKNESS.includes(state.cut)) {
+    hide('sect-thickness');
+    state.thickness = 1.0;
+  } else {
+    show('sect-thickness');
+  }
 }
+
+const NO_THICKNESS = ["Hot Dog","Bratwurst","Italian Sausage","Chorizo","Kielbasa","Corn on Cob","Asparagus"];
 
 function selectCut(name, factor, btnEl) {
   state.cut       = name;
@@ -1361,6 +1392,13 @@ function selectCut(name, factor, btnEl) {
   });
   btnEl.classList.add('active');
   btnEl.setAttribute('aria-pressed', 'true');
+  // Hide thickness for cuts where it doesn't apply
+  if (NO_THICKNESS.includes(name)) {
+    hide('sect-thickness');
+    state.thickness = 1.0; // reset to default
+  } else {
+    show('sect-thickness');
+  }
   calculate();
 }
 
@@ -1399,17 +1437,17 @@ function buildDoneness(key) {
   });
 }
 
-// ─── THICKNESS ──────────────────────────────────────────────────
-document.getElementById('thickness-slider').addEventListener('input', function() {
-  state.thickness = parseFloat(this.value);
+function onThicknessChange(val) {
+  state.thickness = parseFloat(val);
   document.getElementById('thickness-display').textContent = state.thickness.toFixed(2).replace('.00','.0') + '"';
   calculate();
-});
+}
 
 // ─── ENV ─────────────────────────────────────────────────────────
 function onEnvChange() {
   state.winter   = document.getElementById('toggle-winter').checked;
   state.altitude = document.getElementById('toggle-altitude').checked;
+  updateEnvSummary();
   calculate();
 }
 
@@ -1418,7 +1456,7 @@ function calculate() {
   if (!state.protein || !state.cut || !state.heat || !state.doneness) return;
 
   const base = 7.5; // base minutes for 1" med-rare ribeye on high
-  let totalMins = base * state.thickness * state.doneFactor * state.cutFactor / state.heatFactor;
+  let totalMins = base * state.thickness * state.doneFactor * state.cutFactor * state.heatFactor;
   if (state.winter)   totalMins *= 1.15;
   if (state.altitude) totalMins *= 1.25;
 
@@ -1519,13 +1557,10 @@ function tick() {
 
   if (cook.remaining <= 0) {
     clearInterval(cook.tickInterval);
+    cook.tickInterval = null;
     cook.running = false;
-    playAlarm();
-    // Advance to next stage after 3 s
-    setTimeout(() => {
-      stopAlarm();
-      runStage(cook.stage + 1);
-    }, 3000);
+    playAlarm(cook.stage);
+    setTimeout(() => showConfirmOverlay(cook.stage + 1), 800);
   }
 }
 
@@ -1571,9 +1606,9 @@ function togglePause() {
     cook.remaining = Math.max(0, cook.total - elapsed);
     document.getElementById('btn-pause').textContent = '▶ Resume';
   } else {
-    // Resume: reset startTime so elapsed calc is correct
-    cook.total     = cook.remaining;
-    cook.startTime = performance.now();
+    cook.startTime = performance.now() - (cook.total - cook.remaining) * 1000;
+    cook.running   = true;
+    if (!cook.tickInterval) cook.tickInterval = setInterval(tick, 250);
     document.getElementById('btn-pause').textContent = '⏸ Pause';
   }
 }
@@ -1634,15 +1669,23 @@ function confirmStageAdvance() {
 
 function snoozeStage() {
   document.getElementById('confirm-overlay').classList.remove('open');
-  // Add 30s to current stage
-  cook.total     = 30;
-  cook.remaining = 30;
-  cook.startTime = performance.now();
-  cook.running   = true;
-  cook.paused    = false;
-  clearInterval(cook.tickInterval);
-  cook.tickInterval = setInterval(tick, 250);
-  showToast('⏱ +30 seconds added');
+  if (cook.pendingIsLane && cook.pendingLaneId !== undefined) {
+    const lane = lanes[cook.pendingLaneId];
+    if (lane) {
+      lane.total = 30; lane.remaining = 30;
+      lane.startTime = performance.now(); lane.paused = false;
+      clearInterval(lane.interval);
+      lane.interval = setInterval(() => tickLane(cook.pendingLaneId), 500);
+      showToast('⏱ +30 seconds added');
+    }
+  } else {
+    cook.total = 30; cook.remaining = 30;
+    cook.startTime = performance.now();
+    cook.running = true; cook.paused = false;
+    clearInterval(cook.tickInterval);
+    cook.tickInterval = setInterval(tick, 250);
+    showToast('⏱ +30 seconds added');
+  }
 }
 
 // ─── AUDIO ──────────────────────────────────────────────────────
@@ -1822,7 +1865,7 @@ function addSteakLane() {
     return;
   }
   if (Object.keys(lanes).length >= MAX_LANES) {
-    showToast('Max 4 steaks at once');
+    showToast('Max 4 items in the queue');
     return;
   }
 
@@ -1914,7 +1957,7 @@ function showLaneConfirm(id) {
   while (nextValid < LANE_STAGES.length && lane.times[LANE_STAGES[nextValid]] <= 0) nextValid++;
 
   const LANE_CONFIRM = [
-    { emoji:'🔄', title:`Flip ${lane.label}!`,       sub:'Flip once. Don't press down.', action:'✓ Flipped — Continue' },
+    { emoji:'🔄', title:`Flip ${lane.label}!`,       sub:'Flip once. Don\'t press down.', action:'✓ Flipped — Continue' },
     { emoji:'🔥', title:`Move ${lane.label}!`,        sub:'Shift to indirect heat, close lid.', action:'✓ Moved — Continue' },
     { emoji:'🍽️', title:`${lane.label} Off Grill!`,  sub:'Remove and tent with foil.', action:'✓ Resting — Continue' },
     { emoji:'🎉', title:`${lane.label} Done!`,        sub:'Rest complete. Slice and serve!', action:'✓ Done!' },
@@ -2008,9 +2051,35 @@ function renderLanes() {
   }).join('');
 }
 
+// ─── ENVIRONMENT COLLAPSE ───────────────────────────────────────
+function toggleEnvCollapse() {
+  const content = document.getElementById('env-row-content');
+  const btn     = document.getElementById('env-toggle-btn');
+  const chevron = document.getElementById('env-chevron');
+  const expanded = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', !expanded);
+  content.style.display = expanded ? 'none' : 'flex';
+  content.style.flexDirection = 'column';
+  content.style.gap = '10px';
+  updateEnvSummary();
+}
+
+function updateEnvSummary() {
+  const winter   = document.getElementById('toggle-winter')?.checked;
+  const altitude = document.getElementById('toggle-altitude')?.checked;
+  const el = document.getElementById('env-summary');
+  if (!el) return;
+  if (winter && altitude) el.textContent = '❄️ Cold + 🏔 Altitude';
+  else if (winter)        el.textContent = '❄️ Cold weather';
+  else if (altitude)      el.textContent = '🏔 High altitude';
+  else                    el.textContent = 'Standard conditions';
+}
+
 // ─── INIT ────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
   loadFavoritesFromStorage();
+  const slider = document.getElementById('thickness-slider');
+  if (slider) slider.addEventListener('input', function() { onThicknessChange(this.value); });
   selectProtein('beef');
   selectHeat('high', 1.1);
 });
