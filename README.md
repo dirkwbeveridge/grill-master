@@ -129,7 +129,7 @@ grill-master.html
 └── JavaScript (state management, timers, audio, UI)
 ```
 
-**In-memory state** — no localStorage (works in sandboxed environments). Favorites persist only for the session.
+**In-memory state** — no localStorage (works in sandboxed environments). Favorites persist in browser localStorage for each user/browser profile.
 
 **Web Audio API** — plays alarm via oscillator (no audio files to load).
 
@@ -285,7 +285,7 @@ Factor ~1.0 = baseline heat penetration. Higher = slower to cook (thicker, dense
 **Zero tracking. Zero analytics. Zero external requests except Google Fonts CDN.**
 
 - App runs entirely locally in your browser
-- Favorites stored in browser memory only (lost on page refresh)
+- Favorites stored in browser localStorage (persist after refresh; private per browser/profile)
 - No data sent to any server
 - No accounts required
 
