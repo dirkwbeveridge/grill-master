@@ -138,7 +138,7 @@
     /* ─── PROTEIN GRID ─── */
     .protein-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
     .protein-btn {
@@ -613,6 +613,150 @@
     }
     .btn-modal-cancel:hover { color: var(--text); }
 
+
+    /* ─── STAGE CONFIRM ─── */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 70;
+      background: rgba(0,0,0,.72);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      padding: 24px 20px 48px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 250ms var(--ease);
+    }
+    .confirm-overlay.open { opacity: 1; pointer-events: all; }
+    .confirm-sheet {
+      background: var(--surface);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-xl);
+      padding: 28px 24px 24px;
+      width: 100%; max-width: 440px;
+      text-align: center;
+      transform: translateY(16px);
+      transition: transform 250ms var(--ease);
+    }
+    .confirm-overlay.open .confirm-sheet { transform: translateY(0); }
+    .confirm-emoji { font-size: 40px; margin-bottom: 10px; }
+    .confirm-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .confirm-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+    .btn-confirm-action {
+      width: 100%; padding: 16px;
+      background: var(--amber); color: #1a1006;
+      border-radius: var(--radius-md);
+      font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      transition: background 200ms var(--ease), transform 150ms var(--ease);
+      margin-bottom: 10px;
+    }
+    .btn-confirm-action:hover  { background: var(--amber-dim); }
+    .btn-confirm-action:active { transform: scale(0.98); }
+    .btn-confirm-snooze {
+      width: 100%; padding: 12px;
+      background: transparent;
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      transition: all 200ms var(--ease);
+    }
+    .btn-confirm-snooze:hover { border-color: var(--amber); color: var(--amber); }
+
+
+    /* ─── MULTI-STEAK ─── */
+    .steaks-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .btn-add-steak {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      background: color-mix(in oklch, var(--amber) 10%, var(--surface));
+      border: 1.5px solid var(--amber);
+      border-radius: 99px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--amber);
+      transition: all 200ms var(--ease);
+    }
+    .btn-add-steak:hover { background: var(--amber); color: #1a1006; }
+    .btn-add-steak:disabled { opacity: 0.35; pointer-events: none; }
+
+    .steak-lane {
+      background: var(--surface);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+      transition: border-color 200ms var(--ease);
+    }
+    .steak-lane.lane-active  { border-color: var(--amber); }
+    .steak-lane.lane-done    { border-color: var(--green); opacity: 0.7; }
+
+    .steak-lane-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .steak-num {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--amber); color: #1a1006;
+      font-size: 11px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .steak-lane-title {
+      flex: 1;
+      font-size: 13px; font-weight: 700; color: var(--text);
+    }
+    .steak-lane-meta {
+      font-size: 10px; color: var(--text-muted); font-weight: 500;
+    }
+    .btn-remove-lane {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 12px; color: var(--text-faint);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 200ms var(--ease);
+      flex-shrink: 0;
+    }
+    .btn-remove-lane:hover { border-color: var(--red); color: var(--red); }
+
+    .steak-stages {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 6px; margin-bottom: 12px;
+    }
+    .steak-stage-cell {
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      padding: 8px 4px;
+      text-align: center;
+    }
+    .steak-stage-cell .sv {
+      font-family: var(--font-mono);
+      font-size: 14px; font-weight: 500;
+      color: var(--amber); display: block; margin-bottom: 3px;
+    }
+    .steak-stage-cell .sl {
+      font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .steak-stage-cell.active-stage .sv { color: var(--green); font-size: 16px; }
+    .steak-stage-cell.done-stage   .sv { color: var(--text-faint); }
+
+    .btn-start-lane {
+      width: 100%; padding: 11px;
+      background: var(--amber); color: #1a1006;
+      border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+      transition: all 200ms var(--ease);
+    }
+    .btn-start-lane:hover  { background: var(--amber-dim); }
+    .btn-start-lane:active { transform: scale(0.98); }
+    .btn-start-lane:disabled { background: var(--surface-3); color: var(--text-faint); pointer-events: none; }
+
+    .multi-steak-hint {
+      font-size: 12px; color: var(--text-faint); text-align: center;
+      padding: 16px 0 4px; line-height: 1.6;
+    }
+
     /* ─── HIDDEN UTILITY ─── */
     .hidden { display: none !important; }
 
@@ -661,6 +805,7 @@
     <nav class="tabs" role="tablist" aria-label="App sections">
       <button class="tab-btn active" id="tab-timer"     role="tab" aria-selected="true"  onclick="switchTab('timer')">Timer</button>
       <button class="tab-btn"        id="tab-guide"     role="tab" aria-selected="false" onclick="switchTab('guide')">Temp Guide</button>
+      <button class="tab-btn"        id="tab-multisteak" role="tab" aria-selected="false" onclick="switchTab('multisteak')">Multi-Steak</button>
       <button class="tab-btn"        id="tab-favorites" role="tab" aria-selected="false" onclick="switchTab('favorites')">Favorites</button>
     </nav>
   </header>
@@ -692,6 +837,15 @@
             </button>
             <button class="protein-btn" id="cat-fish"    onclick="selectProtein('fish')"    aria-pressed="false">
               <span class="icon">🐟</span><span class="label">Fish</span>
+            </button>
+            <button class="protein-btn" id="cat-burger"  onclick="selectProtein('burger')"  aria-pressed="false">
+              <span class="icon">🍔</span><span class="label">Burger</span>
+            </button>
+            <button class="protein-btn" id="cat-sausage" onclick="selectProtein('sausage')" aria-pressed="false">
+              <span class="icon">🌭</span><span class="label">Sausage</span>
+            </button>
+            <button class="protein-btn" id="cat-veggie"  onclick="selectProtein('veggie')"  aria-pressed="false">
+              <span class="icon">🥦</span><span class="label">Veggie</span>
             </button>
           </div>
         </div>
@@ -800,6 +954,14 @@
         <div class="timer-card">
           <p class="timer-stage" id="timer-stage">Sear Side A</p>
           <div class="timer-display" id="timer-display">0:00</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;">
+            <div id="pull-temp-badge" style="
+              background:color-mix(in oklch,var(--amber) 12%,var(--surface-2));
+              border:1.5px solid var(--amber);border-radius:99px;
+              padding:5px 14px;font-size:12px;font-weight:700;letter-spacing:0.04em;
+              color:var(--amber);font-family:var(--font-mono);
+            ">Pull at 130°F</div>
+          </div>
           <p class="timer-instruction" id="timer-instruction">Place on hot grill, don't move it</p>
           <div class="timer-progress">
             <div class="timer-progress-fill" id="timer-progress-fill" style="width:100%"></div>
@@ -819,6 +981,21 @@
 
     </div><!-- /panel-timer -->
 
+
+
+    <!-- ══ MULTI-STEAK TAB ══ -->
+    <div class="tab-panel hidden" id="panel-multisteak" role="tabpanel">
+      <div class="steaks-header">
+        <p class="step-label" style="margin-bottom:0"><span class="step-dot"></span>Multi-Steak Tracker</p>
+        <button class="btn-add-steak" id="btn-add-steak" onclick="addSteakLane()" aria-label="Add another steak">
+          + Add Steak
+        </button>
+      </div>
+      <p class="multi-steak-hint" id="multi-steak-hint">
+        Configure a cook on the Timer tab first,<br>then add up to 4 steaks here with independent timers.
+      </p>
+      <div id="steak-lanes"></div>
+    </div>
 
     <!-- ══ GUIDE TAB ══ -->
     <div class="tab-panel hidden" id="panel-guide" role="tabpanel">
@@ -900,6 +1077,17 @@
 
   </main><!-- /content -->
 </div><!-- /app-shell -->
+
+<!-- STAGE CONFIRM OVERLAY -->
+<div class="confirm-overlay" id="confirm-overlay" role="dialog" aria-modal="true">
+  <div class="confirm-sheet">
+    <div class="confirm-emoji" id="confirm-emoji">🔄</div>
+    <h2 class="confirm-title" id="confirm-title">Time to Flip!</h2>
+    <p class="confirm-sub" id="confirm-sub">Flip your steak once. Don't press down.</p>
+    <button class="btn-confirm-action" id="btn-confirm-action" onclick="confirmStageAdvance()">✓ Done — Start Next Timer</button>
+    <button class="btn-confirm-snooze" onclick="snoozeStage()">⏱ Give me 30 more seconds</button>
+  </div>
+</div>
 
 <!-- ALARM BANNER -->
 <div class="alarm-banner" id="alarm-banner" onclick="stopAlarm()" role="alert" aria-live="assertive">
@@ -987,6 +1175,47 @@ const MEAT_DB = {
       { label:'Medium',   temp:145, factor:1.30 },
     ],
   },
+  burger: {
+    label: 'Burger',
+    cuts: [
+      { name:'Beef Patty',      factor:1.00 },
+      { name:'Turkey Burger',   factor:0.90 },
+      { name:'Veggie Burger',   factor:0.75 },
+      { name:'Lamb Burger',     factor:1.05 },
+    ],
+    doneness: [
+      { label:'Medium',   temp:160, factor:1.20 },
+      { label:'Well Done',temp:165, factor:1.50 },
+    ],
+  },
+  sausage: {
+    label: 'Sausage',
+    cuts: [
+      { name:'Bratwurst',       factor:1.10 },
+      { name:'Italian Sausage', factor:1.05 },
+      { name:'Hot Dog',         factor:0.60 },
+      { name:'Chorizo',         factor:1.00 },
+      { name:'Kielbasa',        factor:1.15 },
+    ],
+    doneness: [
+      { label:'Safe (160°F)',  temp:160, factor:1.40 },
+    ],
+  },
+  veggie: {
+    label: 'Veggie',
+    cuts: [
+      { name:'Corn on Cob',     factor:1.20 },
+      { name:'Asparagus',       factor:0.50 },
+      { name:'Bell Pepper',     factor:0.80 },
+      { name:'Portobello',      factor:0.90 },
+      { name:'Zucchini',        factor:0.70 },
+      { name:'Eggplant',        factor:0.85 },
+    ],
+    doneness: [
+      { label:'Tender',   temp:180, factor:1.00 },
+      { label:'Charred',  temp:190, factor:1.30 },
+    ],
+  },
   fish: {
     label: 'Fish',
     cuts: [
@@ -1053,6 +1282,7 @@ const cook = {
   remaining:    0,
   startTime:    0,
   tickInterval: null,
+  pendingStage: undefined,
 };
 
 let audioCtx = null;
@@ -1060,7 +1290,7 @@ let alarmNode = null;
 
 // ─── TABS ────────────────────────────────────────────────────────
 function switchTab(name) {
-  ['timer','guide','favorites'].forEach(t => {
+  ['timer','multisteak','guide','favorites'].forEach(t => {
     document.getElementById('tab-'+t).classList.toggle('active', t===name);
     document.getElementById('tab-'+t).setAttribute('aria-selected', t===name);
     document.getElementById('panel-'+t).classList.toggle('active', t===name);
@@ -1244,6 +1474,16 @@ function startCook() {
   initAudio();
   show('active-timer');
   hide('setup-form');
+  // Set pull temp badge
+  const pullBadge = document.getElementById('pull-temp-badge');
+  if (pullBadge) {
+    if (state.protein === 'veggie' || state.protein === 'sausage' || state.protein === 'burger') {
+      pullBadge.style.display = 'none';
+    } else {
+      pullBadge.style.display = '';
+      pullBadge.textContent = 'Pull at ' + (state.doneTemp - 5) + '°F';
+    }
+  }
   cook.stage = 0;
   runStage(0);
 }
@@ -1348,6 +1588,63 @@ function cancelCook() {
   document.getElementById('btn-pause').textContent = '⏸ Pause';
 }
 
+
+const STAGE_CONFIRM = [
+  { emoji: '🔄', title: 'Time to Flip!',       sub: 'Flip your meat once. Don\'t press down.', action: '✓ Flipped — Start Side B' },
+  { emoji: '🔥', title: 'Move to Indirect!',   sub: 'Shift off direct heat, close the lid.', action: '✓ Moved — Start Indirect Heat' },
+  { emoji: '🍽️', title: 'Off the Grill!',      sub: 'Remove from heat. Tent loosely with foil and rest.', action: '✓ Resting — Start Rest Timer' },
+  { emoji: '🎉', title: 'Rest Complete!',       sub: 'Perfect. Slice and serve immediately.', action: '✓ Let\'s Eat!' },
+];
+
+function showConfirmOverlay(nextIdx) {
+  if (nextIdx >= STAGES.length) { finishCook(); return; }
+  // Skip confirm for stages with zero time
+  while (nextIdx < STAGES.length && times[STAGES[nextIdx]] <= 0) nextIdx++;
+  if (nextIdx >= STAGES.length) { finishCook(); return; }
+
+  cook.pendingStage = nextIdx;
+  const c = STAGE_CONFIRM[nextIdx - 1] || STAGE_CONFIRM[0];
+  document.getElementById('confirm-emoji').textContent  = c.emoji;
+  document.getElementById('confirm-title').textContent  = c.title;
+  document.getElementById('confirm-sub').textContent    = c.sub;
+  document.getElementById('btn-confirm-action').textContent = c.action;
+  document.getElementById('confirm-overlay').classList.add('open');
+  haptic('heavy');
+}
+
+function confirmStageAdvance() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if (cook.pendingIsLane) {
+    cook.pendingIsLane = false;
+    const laneId    = cook.pendingLaneId;
+    const nextStage = cook.pendingLaneStage;
+    cook.pendingLaneId    = undefined;
+    cook.pendingLaneStage = undefined;
+    const lane = lanes[laneId];
+    if (lane) {
+      const LANE_STAGES = ['sideA','sideB','finish','rest'];
+      if (nextStage >= LANE_STAGES.length) { finishLane(laneId); }
+      else { runLaneStage(laneId, nextStage); }
+    }
+  } else if (cook.pendingStage !== undefined) {
+    runStage(cook.pendingStage);
+    cook.pendingStage = undefined;
+  }
+}
+
+function snoozeStage() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  // Add 30s to current stage
+  cook.total     = 30;
+  cook.remaining = 30;
+  cook.startTime = performance.now();
+  cook.running   = true;
+  cook.paused    = false;
+  clearInterval(cook.tickInterval);
+  cook.tickInterval = setInterval(tick, 250);
+  showToast('⏱ +30 seconds added');
+}
+
 // ─── AUDIO ──────────────────────────────────────────────────────
 function initAudio() {
   try {
@@ -1356,7 +1653,16 @@ function initAudio() {
   } catch(e) { /* no audio, that's ok */ }
 }
 
-function playAlarm() {
+function playAlarm(stageIdx) {
+  // Update alarm banner with contextual instruction
+  const messages = [
+    '🔄 FLIP TIME — Tap to confirm',
+    '🔥 MOVE TO INDIRECT — Tap to confirm',
+    '🍽️ OFF THE GRILL — Tap to confirm',
+    '✅ REST COMPLETE — Tap to confirm',
+  ];
+  const msg = messages[stageIdx !== undefined ? stageIdx : cook.stage] || '⏰ Timer Complete — Tap to dismiss';
+  document.getElementById('alarm-banner').textContent = msg;
   if (!audioCtx) return;
   stopAlarm();
   try {
@@ -1503,6 +1809,204 @@ function showToast(msg) {
 function show(id) { document.getElementById(id).classList.remove('hidden'); }
 function hide(id) { document.getElementById(id).classList.add('hidden'); }
 function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+
+// ─── MULTI-STEAK ─────────────────────────────────────────────────
+const MAX_LANES = 4;
+let laneNextId = 1;
+const lanes = {}; // keyed by lane id
+
+function addSteakLane() {
+  if (!state.protein || !state.cut || !state.heat || !state.doneness) {
+    showToast('Set up a cook on the Timer tab first');
+    return;
+  }
+  if (Object.keys(lanes).length >= MAX_LANES) {
+    showToast('Max 4 steaks at once');
+    return;
+  }
+
+  const id = laneNextId++;
+  lanes[id] = {
+    id,
+    label:     state.cut,
+    doneness:  state.doneness,
+    thickness: state.thickness,
+    doneTemp:  state.doneTemp,
+    times:     { ...times },
+    stage:     -1,   // -1 = not started
+    remaining: 0,
+    total:     0,
+    startTime: 0,
+    paused:    false,
+    interval:  null,
+  };
+
+  renderLanes();
+  document.getElementById('multi-steak-hint').style.display = 'none';
+  document.getElementById('btn-add-steak').disabled = Object.keys(lanes).length >= MAX_LANES;
+  showToast(`✓ ${state.cut} added (${state.doneness})`);
+}
+
+function removeLane(id) {
+  if (lanes[id] && lanes[id].interval) clearInterval(lanes[id].interval);
+  delete lanes[id];
+  document.getElementById('btn-add-steak').disabled = Object.keys(lanes).length >= MAX_LANES;
+  renderLanes();
+  if (Object.keys(lanes).length === 0) {
+    document.getElementById('multi-steak-hint').style.display = '';
+  }
+}
+
+function startLane(id) {
+  const lane = lanes[id];
+  if (!lane) return;
+  initAudio();
+  // Find first non-zero stage
+  const LANE_STAGES = ['sideA','sideB','finish','rest'];
+  let idx = 0;
+  while (idx < LANE_STAGES.length && lane.times[LANE_STAGES[idx]] <= 0) idx++;
+  runLaneStage(id, idx);
+}
+
+function runLaneStage(id, idx) {
+  const lane = lanes[id];
+  if (!lane) return;
+  const LANE_STAGES = ['sideA','sideB','finish','rest'];
+  // Skip zero stages
+  while (idx < LANE_STAGES.length && lane.times[LANE_STAGES[idx]] <= 0) idx++;
+  if (idx >= LANE_STAGES.length) { finishLane(id); return; }
+
+  lane.stage     = idx;
+  lane.total     = lane.times[LANE_STAGES[idx]];
+  lane.remaining = lane.total;
+  lane.startTime = performance.now();
+  lane.paused    = false;
+
+  clearInterval(lane.interval);
+  lane.interval = setInterval(() => tickLane(id), 500);
+  renderLanes();
+}
+
+function tickLane(id) {
+  const lane = lanes[id];
+  if (!lane || lane.paused) return;
+  const elapsed = (performance.now() - lane.startTime) / 1000;
+  lane.remaining = Math.max(0, lane.total - elapsed);
+  updateLaneDisplay(id);
+  if (lane.remaining <= 0) {
+    clearInterval(lane.interval);
+    lane.interval = null;
+    playAlarm(lane.stage);
+    haptic('heavy');
+    // Show steak-specific confirm
+    showLaneConfirm(id);
+  }
+}
+
+function showLaneConfirm(id) {
+  const lane = lanes[id];
+  if (!lane) return;
+  const LANE_STAGES = ['sideA','sideB','finish','rest'];
+  const next = lane.stage + 1;
+  // Find next valid stage
+  let nextValid = next;
+  while (nextValid < LANE_STAGES.length && lane.times[LANE_STAGES[nextValid]] <= 0) nextValid++;
+
+  const LANE_CONFIRM = [
+    { emoji:'🔄', title:`Flip ${lane.label}!`,       sub:'Flip once. Don't press down.', action:'✓ Flipped — Continue' },
+    { emoji:'🔥', title:`Move ${lane.label}!`,        sub:'Shift to indirect heat, close lid.', action:'✓ Moved — Continue' },
+    { emoji:'🍽️', title:`${lane.label} Off Grill!`,  sub:'Remove and tent with foil.', action:'✓ Resting — Continue' },
+    { emoji:'🎉', title:`${lane.label} Done!`,        sub:'Rest complete. Slice and serve!', action:'✓ Done!' },
+  ];
+  const c = LANE_CONFIRM[Math.min(lane.stage, LANE_CONFIRM.length-1)];
+
+  // Reuse confirm overlay, store lane id
+  cook.pendingLaneId    = id;
+  cook.pendingLaneStage = nextValid;
+  cook.pendingIsLane    = true;
+
+  document.getElementById('confirm-emoji').textContent        = c.emoji;
+  document.getElementById('confirm-title').textContent        = c.title;
+  document.getElementById('confirm-sub').textContent          = c.sub;
+  document.getElementById('btn-confirm-action').textContent   = c.action;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function finishLane(id) {
+  const lane = lanes[id];
+  if (!lane) return;
+  clearInterval(lane.interval);
+  lane.interval  = null;
+  lane.stage     = 99; // done sentinel
+  lane.remaining = 0;
+  renderLanes();
+}
+
+function updateLaneDisplay(id) {
+  const el = document.getElementById('lane-display-' + id);
+  if (!el) return;
+  const LANE_STAGES = ['sideA','sideB','finish','rest'];
+  const stage = lanes[id].stage;
+  LANE_STAGES.forEach((s, i) => {
+    const cell = document.getElementById(`lane-${id}-stage-${i}`);
+    if (!cell) return;
+    const valEl = cell.querySelector('.sv');
+    cell.classList.remove('active-stage','done-stage');
+    if (i < stage) {
+      cell.classList.add('done-stage');
+      if (valEl) valEl.textContent = '✓';
+    } else if (i === stage) {
+      cell.classList.add('active-stage');
+      if (valEl) valEl.textContent = fmtDisplay(lanes[id].remaining);
+    } else {
+      if (valEl) valEl.textContent = fmtShort(lanes[id].times[s]);
+    }
+  });
+}
+
+function renderLanes() {
+  const container = document.getElementById('steak-lanes');
+  if (!container) return;
+  const LANE_STAGES = ['sideA','sideB','finish','rest'];
+  const LANE_LABELS = ['Side A','Side B','Indirect','Rest'];
+
+  container.innerHTML = Object.values(lanes).map(lane => {
+    const isDone    = lane.stage === 99;
+    const isRunning = lane.interval !== null;
+    const laneClass = isDone ? 'lane-done' : isRunning ? 'lane-active' : '';
+    const btnLabel  = isDone ? '✓ Done' : isRunning ? '▶ Running…' : '▶ Start';
+    const btnDisabled = (isDone || isRunning) ? 'disabled' : '';
+
+    const stageCells = LANE_STAGES.map((s, i) => {
+      let val = fmtShort(lane.times[s]);
+      let cls = '';
+      if (lane.times[s] <= 0) { val = '—'; }
+      if (isDone || i < lane.stage)  { val = '✓'; cls = 'done-stage'; }
+      if (!isDone && i === lane.stage && isRunning) { val = fmtDisplay(lane.remaining); cls = 'active-stage'; }
+      return `<div class="steak-stage-cell ${cls}" id="lane-${lane.id}-stage-${i}">
+        <span class="sv">${val}</span>
+        <span class="sl">${LANE_LABELS[i]}</span>
+      </div>`;
+    }).join('');
+
+    const pullTemp = (lane.doneTemp > 0 && lane.doneTemp < 180)
+      ? `· Pull at ${lane.doneTemp - 5}°F` : '';
+
+    return `<div class="steak-lane ${laneClass}" id="lane-${lane.id}">
+      <div class="steak-lane-header">
+        <div class="steak-num">${Object.keys(lanes).indexOf(String(lane.id)) + 1}</div>
+        <div>
+          <div class="steak-lane-title">${escHtml(lane.label)}</div>
+          <div class="steak-lane-meta">${lane.doneness} · ${lane.thickness}" ${pullTemp}</div>
+        </div>
+        ${!isRunning && !isDone ? `<button class="btn-remove-lane" onclick="removeLane(${lane.id})" aria-label="Remove">✕</button>` : ''}
+      </div>
+      <div class="steak-stages" id="lane-display-${lane.id}">${stageCells}</div>
+      <button class="btn-start-lane" onclick="startLane(${lane.id})" ${btnDisabled}>${btnLabel}</button>
+    </div>`;
+  }).join('');
+}
 
 // ─── INIT ────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
