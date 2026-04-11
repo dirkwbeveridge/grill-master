@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Science-backed grilling times for any cut, heat, and doneness">
+  <title>Grill Master</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ─── TOKENS ─── */
+    :root {
+      --bg:         #171411;
+      --surface:    #1f1c18;
+      --surface-2:  #272320;
+      --surface-3:  #302c28;
+      --border:     rgba(255,243,220,0.08);
+      --border-2:   rgba(255,243,220,0.14);
+      --text:       #f2ece0;
+      --text-muted: #9e9488;
+      --text-faint: #5e574f;
+      --amber:      #e8923a;
+      --amber-dim:  #c9722a;
+      --amber-glow: rgba(232,146,58,0.12);
+      --amber-ring: rgba(232,146,58,0.30);
+      --green:      #6ab04c;
+      --green-dim:  #4e8c33;
+      --red:        #d95f52;
+      --radius-sm:  6px;
+      --radius-md:  10px;
+      --radius-lg:  16px;
+      --radius-xl:  22px;
+      --shadow-sm:  0 1px 3px rgba(0,0,0,.35);
+      --shadow-md:  0 4px 16px rgba(0,0,0,.45);
+      --ease:       cubic-bezier(0.16,1,0.3,1);
+      --font-body:  'DM Sans', system-ui, sans-serif;
+      --font-mono:  'DM Mono', 'Courier New', monospace;
+    }
+
+    /* ─── RESET ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: none; scroll-behavior: smooth; }
+    body {
+      min-height: 100dvh;
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+    input  { font: inherit; color: inherit; }
+    img    { display: block; max-width: 100%; }
+
+    /* ─── LAYOUT ─── */
+    .app-shell {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── HEADER ─── */
+    .header {
+      position: sticky; top: 0; z-index: 40;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px 0;
+    }
+    .header-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+    }
+    .logo-text {
+      font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .logo-text span { color: var(--amber); }
+
+    /* ─── TABS ─── */
+    .tabs {
+      display: flex; gap: 0;
+    }
+    .tab-btn {
+      flex: 1; padding: 10px 8px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-faint);
+      border-bottom: 2px solid transparent;
+      transition: color 200ms var(--ease), border-color 200ms var(--ease);
+    }
+    .tab-btn.active {
+      color: var(--amber);
+      border-bottom-color: var(--amber);
+    }
+
+    /* ─── CONTENT ─── */
+    .content {
+      flex: 1;
+      padding: 24px 20px 100px;
+      overflow-y: auto;
+    }
+
+    /* ─── TAB PANELS ─── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ─── SECTION LABELS ─── */
+    .step-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 12px;
+    }
+    .step-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--amber);
+      flex-shrink: 0;
+    }
+
+    /* ─── SECTION SPACING ─── */
+    .section { margin-bottom: 28px; }
+    .section-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0;
+    }
+
+    /* ─── PROTEIN GRID ─── */
+    .protein-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+    .protein-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      padding: 12px 4px 10px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      transition: all 200ms var(--ease);
+    }
+    .protein-btn:active { transform: scale(0.96); }
+    .protein-btn .icon { font-size: 22px; line-height: 1; }
+    .protein-btn .label {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .protein-btn.active {
+      background: color-mix(in oklch, var(--amber) 12%, var(--surface));
+      border-color: var(--amber);
+    }
+    .protein-btn.active .label { color: var(--amber); }
+
+    /* ─── CUT GRID ─── */
+    .cut-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    @media (min-width: 380px) {
+      .cut-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .cut-btn {
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      transition: all 200ms var(--ease);
+    }
+    .cut-btn:active { transform: scale(0.97); }
+    .cut-btn.active {
+      background: color-mix(in oklch, var(--amber) 12%, var(--surface));
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    /* ─── THICKNESS SLIDER ─── */
+    .slider-row {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .slider-track {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      background: var(--surface-3);
+      border-radius: 99px;
+      outline: none;
+    }
+    .slider-track::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--amber);
+      border: 3px solid var(--bg);
+      cursor: pointer;
+      box-shadow: 0 0 0 1px var(--amber);
+    }
+    .slider-track::-moz-range-thumb {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--amber);
+      border: 3px solid var(--bg);
+      cursor: pointer;
+    }
+    .slider-value {
+      font-size: 22px; font-weight: 700; color: var(--amber);
+      min-width: 48px; text-align: right;
+      font-family: var(--font-mono);
+    }
+
+    /* ─── HEAT BUTTONS ─── */
+    .heat-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .heat-btn {
+      padding: 12px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-muted);
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      transition: all 200ms var(--ease);
+    }
+    .heat-btn:active { transform: scale(0.97); }
+    .heat-btn .heat-icon { font-size: 18px; }
+    .heat-btn.active {
+      background: color-mix(in oklch, var(--amber) 12%, var(--surface));
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    /* ─── DONENESS PILLS ─── */
+    .doneness-row {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .doneness-btn {
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-muted);
+      transition: all 200ms var(--ease);
+    }
+    .doneness-btn:active { transform: scale(0.96); }
+    .doneness-btn.active {
+      background: color-mix(in oklch, var(--amber) 14%, var(--surface));
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    /* ─── ENV TOGGLES ─── */
+    .env-row {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .env-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color 200ms var(--ease);
+    }
+    .env-toggle:has(input:checked) { border-color: var(--amber); }
+    .env-toggle-info { display: flex; flex-direction: column; gap: 2px; }
+    .env-toggle-label { font-size: 13px; font-weight: 600; color: var(--text); }
+    .env-toggle-desc  { font-size: 11px; color: var(--text-muted); }
+    .toggle-switch {
+      position: relative; width: 40px; height: 22px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--surface-3);
+      border-radius: 99px;
+      transition: background 200ms var(--ease);
+    }
+    .toggle-switch input:checked ~ .toggle-track { background: var(--amber); }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 200ms var(--ease);
+      pointer-events: none;
+    }
+    .toggle-switch input:checked ~ .toggle-track ~ .toggle-thumb { transform: translateX(18px); }
+
+    /* ─── RESULTS CARD ─── */
+    .results-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+    .results-meta {
+      font-size: 12px; color: var(--text-muted);
+      text-align: center; margin-bottom: 16px;
+    }
+    .times-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; margin-bottom: 20px;
+    }
+    .time-cell {
+      background: var(--surface-2);
+      border-radius: var(--radius-md);
+      padding: 12px 6px;
+      text-align: center;
+    }
+    .time-cell .t-val {
+      font-family: var(--font-mono);
+      font-size: 18px; font-weight: 500;
+      color: var(--amber);
+      display: block; margin-bottom: 4px;
+    }
+    .time-cell .t-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .time-cell.total .t-val { font-size: 22px; color: var(--text); }
+    .btn-start {
+      width: 100%;
+      padding: 16px;
+      background: var(--amber);
+      color: #1a1006;
+      border-radius: var(--radius-md);
+      font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      transition: background 200ms var(--ease), transform 150ms var(--ease);
+      margin-bottom: 10px;
+    }
+    .btn-start:hover  { background: var(--amber-dim); }
+    .btn-start:active { transform: scale(0.98); }
+    .btn-save {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-muted);
+      transition: all 200ms var(--ease);
+    }
+    .btn-save:hover  { border-color: var(--amber); color: var(--amber); }
+    .btn-save:active { transform: scale(0.98); }
+
+    /* ─── ACTIVE TIMER ─── */
+    .timer-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-lg);
+      padding: 28px 20px;
+      text-align: center;
+    }
+    .timer-stage {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 8px;
+    }
+    .timer-display {
+      font-family: var(--font-mono);
+      font-size: clamp(56px, 18vw, 80px);
+      font-weight: 500;
+      color: var(--amber);
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 8px;
+      transition: color 400ms var(--ease);
+    }
+    .timer-display.done   { color: var(--green); }
+    .timer-display.resting { color: var(--text-muted); }
+    .timer-instruction {
+      font-size: 14px; color: var(--text-muted);
+      margin-bottom: 28px; min-height: 1.5em;
+    }
+    /* Progress bar */
+    .timer-progress {
+      height: 3px; background: var(--surface-3);
+      border-radius: 99px; overflow: hidden; margin-bottom: 28px;
+    }
+    .timer-progress-fill {
+      height: 100%; background: var(--amber);
+      border-radius: 99px;
+      transition: width 1s linear, background 400ms var(--ease);
+    }
+    /* Stage pills */
+    .stages-row {
+      display: flex; gap: 6px; justify-content: center;
+      margin-bottom: 24px;
+    }
+    .stage-pill {
+      padding: 4px 10px;
+      background: var(--surface-2);
+      border-radius: 99px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--text-faint);
+      transition: all 200ms var(--ease);
+    }
+    .stage-pill.active { background: var(--amber); color: #1a1006; }
+    .stage-pill.done   { background: var(--green-dim); color: white; }
+    /* Timer controls */
+    .timer-controls {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn-pause {
+      padding: 14px;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 600;
+      color: var(--text);
+      transition: all 200ms var(--ease);
+    }
+    .btn-pause:hover  { border-color: var(--amber); color: var(--amber); }
+    .btn-cancel {
+      padding: 14px;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 600;
+      color: var(--text-muted);
+      transition: all 200ms var(--ease);
+    }
+    .btn-cancel:hover  { border-color: var(--red); color: var(--red); }
+
+    /* ─── ALARM BANNER ─── */
+    .alarm-banner {
+      position: fixed; bottom: 24px; left: 20px; right: 20px;
+      z-index: 90;
+      background: var(--amber);
+      color: #1a1006;
+      padding: 16px 20px;
+      border-radius: var(--radius-lg);
+      font-weight: 700; font-size: 14px; letter-spacing: 0.04em;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      animation: slide-up 300ms var(--ease);
+      cursor: pointer;
+      display: none;
+    }
+    .alarm-banner.visible { display: block; }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── GUIDE TAB ─── */
+    .guide-intro {
+      font-size: 14px; color: var(--text-muted);
+      margin-bottom: 20px; line-height: 1.6;
+    }
+    .doneness-list { display: flex; flex-direction: column; gap: 10px; }
+    .doneness-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .doneness-swatch {
+      width: 32px; height: 32px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .doneness-info-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+    .doneness-info-temp  { font-size: 12px; color: var(--amber); font-family: var(--font-mono); font-weight: 500; margin-bottom: 4px; }
+    .doneness-info-desc  { font-size: 12px; color: var(--text-muted); }
+
+    .tips-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 20px;
+    }
+    .tips-title { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+    .tips-list  { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .tips-list li {
+      font-size: 13px; color: var(--text-muted);
+      padding-left: 18px; position: relative; line-height: 1.5;
+    }
+    .tips-list li::before {
+      content: '→'; position: absolute; left: 0;
+      color: var(--amber); font-size: 11px; top: 1px;
+    }
+
+    /* ─── SAFE TEMPS TABLE ─── */
+    .safe-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 12px; margin-top: 16px;
+    }
+    .safe-table th {
+      text-align: left; padding: 8px 10px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-faint);
+      border-bottom: 1px solid var(--border);
+    }
+    .safe-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .safe-table td:last-child { font-family: var(--font-mono); color: var(--amber); font-weight: 500; }
+    .safe-table tr:last-child td { border-bottom: none; }
+
+    /* ─── FAVORITES TAB ─── */
+    .fav-empty {
+      text-align: center; padding: 48px 20px;
+      color: var(--text-faint); font-size: 14px; line-height: 1.6;
+    }
+    .fav-empty .fav-empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .fav-list { display: flex; flex-direction: column; gap: 10px; }
+    .fav-card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .fav-card-info { flex: 1; min-width: 0; }
+    .fav-card-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .fav-card-meta { font-size: 11px; color: var(--text-muted); }
+    .fav-btn-load {
+      padding: 8px 14px;
+      background: color-mix(in oklch, var(--amber) 12%, var(--surface));
+      border: 1.5px solid var(--amber);
+      border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--amber);
+      transition: all 200ms var(--ease);
+    }
+    .fav-btn-load:hover { background: var(--amber); color: #1a1006; }
+    .fav-btn-del {
+      padding: 8px 10px;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px; color: var(--text-faint);
+      transition: all 200ms var(--ease);
+    }
+    .fav-btn-del:hover { border-color: var(--red); color: var(--red); }
+
+    /* ─── SAVE MODAL ─── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(0,0,0,.65);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 250ms var(--ease);
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal-sheet {
+      background: var(--surface);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-xl);
+      padding: 24px 20px 32px;
+      width: 100%; max-width: 440px;
+      transform: translateY(20px);
+      transition: transform 250ms var(--ease);
+    }
+    .modal-backdrop.open .modal-sheet { transform: translateY(0); }
+    .modal-title  { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .modal-sub    { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+    .modal-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-md);
+      font-size: 14px; color: var(--text);
+      outline: none;
+      transition: border-color 200ms var(--ease);
+      margin-bottom: 16px;
+    }
+    .modal-input:focus { border-color: var(--amber); }
+    .modal-input::placeholder { color: var(--text-faint); }
+    .modal-actions { display: flex; gap: 10px; }
+    .btn-modal-confirm {
+      flex: 1; padding: 13px;
+      background: var(--amber); color: #1a1006;
+      border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      transition: background 200ms var(--ease);
+    }
+    .btn-modal-confirm:hover { background: var(--amber-dim); }
+    .btn-modal-cancel {
+      padding: 13px 18px;
+      background: var(--surface-2);
+      border: 1.5px solid var(--border-2);
+      border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 600;
+      color: var(--text-muted);
+      transition: all 200ms var(--ease);
+    }
+    .btn-modal-cancel:hover { color: var(--text); }
+
+    /* ─── HIDDEN UTILITY ─── */
+    .hidden { display: none !important; }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+      z-index: 95;
+      background: var(--surface-3);
+      border: 1px solid var(--border-2);
+      border-radius: 99px;
+      padding: 10px 20px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      box-shadow: var(--shadow-md);
+      opacity: 0; pointer-events: none;
+      transition: opacity 200ms var(--ease), transform 200ms var(--ease);
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-top">
+      <div class="logo">
+        <!-- SVG flame logo -->
+        <svg class="logo-icon" viewBox="0 0 32 32" fill="none" aria-label="Grill Master">
+          <path d="M16 28C16 28 7 22.5 7 15C7 11.134 10.134 8 14 8C14.5 8 15 8.06 15.5 8.17C14.6 9.1 14 10.47 14 12C14 15.314 16.686 18 20 18C21.17 18 22.26 17.65 23.17 17.04C22.44 23.26 16 28 16 28Z" fill="url(#flame-grad)"/>
+          <path d="M20 4C20 4 24 7 24 12C24 14.21 22.21 16 20 16C17.79 16 16 14.21 16 12C16 10.4 16.9 9.01 18.24 8.29C18.09 8.86 18 9.43 18 10C18 11.657 19.343 13 21 13" stroke="#f2ece0" stroke-opacity="0.3" stroke-width="0" fill="none"/>
+          <defs>
+            <linearGradient id="flame-grad" x1="16" y1="28" x2="16" y2="8" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#e8923a"/>
+              <stop offset="100%" stop-color="#f5c842"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">Grill<span>Master</span></span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="App sections">
+      <button class="tab-btn active" id="tab-timer"     role="tab" aria-selected="true"  onclick="switchTab('timer')">Timer</button>
+      <button class="tab-btn"        id="tab-guide"     role="tab" aria-selected="false" onclick="switchTab('guide')">Temp Guide</button>
+      <button class="tab-btn"        id="tab-favorites" role="tab" aria-selected="false" onclick="switchTab('favorites')">Favorites</button>
+    </nav>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- ══ TIMER TAB ══ -->
+    <div class="tab-panel active" id="panel-timer" role="tabpanel">
+
+      <!-- SETUP FORM (shown when not actively cooking) -->
+      <div id="setup-form">
+
+        <!-- Step 1: Protein -->
+        <div class="section">
+          <p class="step-label"><span class="step-dot"></span>Step 1 — Protein</p>
+          <div class="protein-grid" id="protein-grid">
+            <button class="protein-btn" id="cat-beef"    onclick="selectProtein('beef')"    aria-pressed="false">
+              <span class="icon">🥩</span><span class="label">Beef</span>
+            </button>
+            <button class="protein-btn" id="cat-pork"    onclick="selectProtein('pork')"    aria-pressed="false">
+              <span class="icon">🍖</span><span class="label">Pork</span>
+            </button>
+            <button class="protein-btn" id="cat-poultry" onclick="selectProtein('poultry')" aria-pressed="false">
+              <span class="icon">🍗</span><span class="label">Poultry</span>
+            </button>
+            <button class="protein-btn" id="cat-lamb"    onclick="selectProtein('lamb')"    aria-pressed="false">
+              <span class="icon">🐑</span><span class="label">Lamb</span>
+            </button>
+            <button class="protein-btn" id="cat-fish"    onclick="selectProtein('fish')"    aria-pressed="false">
+              <span class="icon">🐟</span><span class="label">Fish</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Cut -->
+        <div class="section hidden" id="sect-cut">
+          <p class="step-label"><span class="step-dot"></span>Step 2 — Cut</p>
+          <div class="cut-grid" id="cut-grid"></div>
+        </div>
+
+        <!-- Step 3: Thickness -->
+        <div class="section hidden" id="sect-thickness">
+          <p class="step-label"><span class="step-dot"></span>Step 3 — Thickness</p>
+          <div class="slider-row">
+            <input type="range" class="slider-track" id="thickness-slider"
+              min="0.5" max="2.5" step="0.25" value="1.0"
+              aria-label="Thickness in inches">
+            <span class="slider-value" id="thickness-display">1.0"</span>
+          </div>
+        </div>
+
+        <!-- Step 4: Heat -->
+        <div class="section hidden" id="sect-heat">
+          <p class="step-label"><span class="step-dot"></span>Step 4 — Grill Heat</p>
+          <div class="heat-row">
+            <button class="heat-btn" id="heat-medium" onclick="selectHeat('medium', 1.0)" aria-pressed="false">
+              <span class="heat-icon">🔥</span>Medium
+            </button>
+            <button class="heat-btn" id="heat-high" onclick="selectHeat('high', 1.1)" aria-pressed="false">
+              <span class="heat-icon">🔥🔥</span>High
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 5: Doneness -->
+        <div class="section hidden" id="sect-doneness">
+          <p class="step-label"><span class="step-dot"></span>Step 5 — Doneness</p>
+          <div class="doneness-row" id="doneness-row"></div>
+        </div>
+
+        <!-- Environment -->
+        <div class="section hidden" id="sect-env">
+          <p class="step-label"><span class="step-dot"></span>Environment</p>
+          <div class="env-row">
+            <label class="env-toggle" for="toggle-winter">
+              <div class="env-toggle-info">
+                <span class="env-toggle-label">❄️ Cold Weather Mode</span>
+                <span class="env-toggle-desc">Adds 15% — cold air slows heat transfer</span>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" id="toggle-winter" onchange="onEnvChange()">
+                <span class="toggle-track"></span>
+                <span class="toggle-thumb"></span>
+              </div>
+            </label>
+            <label class="env-toggle" for="toggle-altitude">
+              <div class="env-toggle-info">
+                <span class="env-toggle-label">🏔 High Altitude (5,000+ ft)</span>
+                <span class="env-toggle-desc">Adds 25% — thinner air, lower boiling point</span>
+              </div>
+              <div class="toggle-switch">
+                <input type="checkbox" id="toggle-altitude" onchange="onEnvChange()">
+                <span class="toggle-track"></span>
+                <span class="toggle-thumb"></span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="hidden" id="sect-results">
+          <div class="section-divider"></div>
+          <div class="results-card">
+            <p class="results-meta" id="results-meta">—</p>
+            <div class="times-grid">
+              <div class="time-cell">
+                <span class="t-val" id="t-side-a">—</span>
+                <span class="t-label">Side A</span>
+              </div>
+              <div class="time-cell">
+                <span class="t-val" id="t-side-b">—</span>
+                <span class="t-label">Side B</span>
+              </div>
+              <div class="time-cell">
+                <span class="t-val" id="t-finish">—</span>
+                <span class="t-label">Indirect</span>
+              </div>
+              <div class="time-cell">
+                <span class="t-val" id="t-rest">—</span>
+                <span class="t-label">Rest</span>
+              </div>
+            </div>
+            <button class="btn-start" onclick="startCook()">▶ Start Timer</button>
+            <button class="btn-save"  onclick="openSaveModal()">💾 Save as Favorite</button>
+          </div>
+        </div>
+
+      </div><!-- /setup-form -->
+
+      <!-- ACTIVE TIMER (replaces setup form) -->
+      <div class="hidden" id="active-timer">
+        <div class="timer-card">
+          <p class="timer-stage" id="timer-stage">Sear Side A</p>
+          <div class="timer-display" id="timer-display">0:00</div>
+          <p class="timer-instruction" id="timer-instruction">Place on hot grill, don't move it</p>
+          <div class="timer-progress">
+            <div class="timer-progress-fill" id="timer-progress-fill" style="width:100%"></div>
+          </div>
+          <div class="stages-row">
+            <span class="stage-pill" id="pill-side-a">Side A</span>
+            <span class="stage-pill" id="pill-side-b">Side B</span>
+            <span class="stage-pill" id="pill-finish">Indirect</span>
+            <span class="stage-pill" id="pill-rest">Rest</span>
+          </div>
+          <div class="timer-controls">
+            <button class="btn-pause" id="btn-pause" onclick="togglePause()">⏸ Pause</button>
+            <button class="btn-cancel" onclick="cancelCook()">✕ Cancel</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panel-timer -->
+
+
+    <!-- ══ GUIDE TAB ══ -->
+    <div class="tab-panel hidden" id="panel-guide" role="tabpanel">
+      <p class="step-label"><span class="step-dot"></span>Meat Thermometer 101</p>
+      <p class="guide-intro">
+        Trust a probe, not a guess. These are the internal temperatures and visual cues for each level of doneness. Pull the meat 5°F before target — it rises while resting.
+      </p>
+
+      <div class="doneness-list">
+        <div class="doneness-card">
+          <div class="doneness-swatch" style="background: #8B0000;"></div>
+          <div>
+            <p class="doneness-info-title">Rare</p>
+            <p class="doneness-info-temp">120–125°F (49–52°C)</p>
+            <p class="doneness-info-desc">Cool, bright red center. Silky texture. Touch test: press your cheek — that's how it yields.</p>
+          </div>
+        </div>
+        <div class="doneness-card">
+          <div class="doneness-swatch" style="background: #C0392B;"></div>
+          <div>
+            <p class="doneness-info-title">Medium-Rare</p>
+            <p class="doneness-info-temp">130–135°F (54–57°C)</p>
+            <p class="doneness-info-desc">Warm, pink-red center. Slightly firmer, juicy. The preferred choice for most steaks. Touch: fingertip to thumb.</p>
+          </div>
+        </div>
+        <div class="doneness-card">
+          <div class="doneness-swatch" style="background: #D4874E;"></div>
+          <div>
+            <p class="doneness-info-title">Medium</p>
+            <p class="doneness-info-temp">140–145°F (60–63°C)</p>
+            <p class="doneness-info-desc">Pink throughout, brown outer band. Firm but still moist. Touch: middle finger to thumb.</p>
+          </div>
+        </div>
+        <div class="doneness-card">
+          <div class="doneness-swatch" style="background: #A0522D;"></div>
+          <div>
+            <p class="doneness-info-title">Well Done</p>
+            <p class="doneness-info-temp">160°F+ (71°C+)</p>
+            <p class="doneness-info-desc">No pink. Fully browned throughout. Firmer texture. Touch: ring finger to thumb (ball of hand is tense).</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tips-card">
+        <p class="tips-title">USDA Minimum Safe Temps</p>
+        <table class="safe-table" aria-label="USDA minimum safe internal temperatures">
+          <thead>
+            <tr><th>Protein</th><th>Min Temp</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Beef, Lamb (whole cuts)</td><td>145°F + 3 min rest</td></tr>
+            <tr><td>Pork</td><td>145°F + 3 min rest</td></tr>
+            <tr><td>Ground Meat</td><td>160°F</td></tr>
+            <tr><td>All Poultry</td><td>165°F</td></tr>
+            <tr><td>Fish / Seafood</td><td>145°F</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tips-card" style="margin-top:12px">
+        <p class="tips-title">Pro Tips</p>
+        <ul class="tips-list">
+          <li>Insert probe into the thickest part, away from bone or fat</li>
+          <li>Pull 5°F early — carryover cooking raises temp while resting</li>
+          <li>Rest steak 5 min minimum (10 min for thick cuts). Cover loosely with foil</li>
+          <li>Pat dry before grilling — steam is the enemy of a good sear</li>
+          <li>Room-temp meat (30 min out of fridge) cooks more evenly</li>
+          <li>Don't press the steak — you're squeezing out the juices</li>
+        </ul>
+      </div>
+    </div><!-- /panel-guide -->
+
+
+    <!-- ══ FAVORITES TAB ══ -->
+    <div class="tab-panel hidden" id="panel-favorites" role="tabpanel">
+      <p class="step-label"><span class="step-dot"></span>Saved Configurations</p>
+      <div id="fav-content"></div>
+    </div>
+
+  </main><!-- /content -->
+</div><!-- /app-shell -->
+
+<!-- ALARM BANNER -->
+<div class="alarm-banner" id="alarm-banner" onclick="stopAlarm()" role="alert" aria-live="assertive">
+  ⏰ Timer Complete — tap to dismiss
+</div>
+
+<!-- SAVE MODAL -->
+<div class="modal-backdrop" id="save-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title-text">
+  <div class="modal-sheet">
+    <h2 class="modal-title" id="modal-title-text">Save this cook</h2>
+    <p class="modal-sub">Give it a name you'll remember — e.g. "Dad's Ribeye"</p>
+    <input type="text" class="modal-input" id="fav-name-input"
+      placeholder="e.g. Perfect Saturday Ribeye" maxlength="40"
+      onkeydown="if(event.key==='Enter')confirmSave()">
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeSaveModal()">Cancel</button>
+      <button class="btn-modal-confirm" onclick="confirmSave()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" aria-live="polite"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   GRILL MASTER — v2.0
+   Bugs fixed, all features, no external dependencies beyond fonts
+   ════════════════════════════════════════════════════════════════ */
+
+// ─── DATA ───────────────────────────────────────────────────────
+const MEAT_DB = {
+  beef: {
+    label: 'Beef',
+    cuts: [
+      { name:'Ribeye',       factor:1.10 },
+      { name:'Filet Mignon', factor:0.90 },
+      { name:'NY Strip',     factor:1.00 },
+      { name:'Sirloin',      factor:0.85 },
+      { name:'T-Bone',       factor:1.20 },
+      { name:'Porterhouse',  factor:1.25 },
+      { name:'Hanger Steak', factor:0.95 },
+      { name:'Flank Steak',  factor:0.80 },
+    ],
+    doneness: [
+      { label:'Rare',     temp:125, factor:0.75 },
+      { label:'Med-Rare', temp:135, factor:1.00 },
+      { label:'Medium',   temp:145, factor:1.25 },
+      { label:'Well',     temp:160, factor:1.60 },
+    ],
+  },
+  pork: {
+    label: 'Pork',
+    cuts: [
+      { name:'Pork Chop',      factor:1.15 },
+      { name:'Tenderloin',     factor:1.00 },
+      { name:'Bacon Steak',    factor:0.70 },
+      { name:'Spare Ribs',     factor:1.40 },
+    ],
+    doneness: [
+      { label:'Medium',   temp:145, factor:1.20 },
+      { label:'Well Done',temp:160, factor:1.60 },
+    ],
+  },
+  poultry: {
+    label: 'Poultry',
+    cuts: [
+      { name:'Chicken Breast', factor:1.20 },
+      { name:'Chicken Thigh',  factor:1.10 },
+      { name:'Turkey Breast',  factor:1.30 },
+    ],
+    doneness: [
+      { label:'Safe (165°F)', temp:165, factor:1.80 },
+    ],
+  },
+  lamb: {
+    label: 'Lamb',
+    cuts: [
+      { name:'Lamb Chops', factor:0.80 },
+      { name:'Lamb Loin',  factor:0.90 },
+      { name:'Lamb Leg',   factor:1.10 },
+    ],
+    doneness: [
+      { label:'Med-Rare', temp:135, factor:1.00 },
+      { label:'Medium',   temp:145, factor:1.30 },
+    ],
+  },
+  fish: {
+    label: 'Fish',
+    cuts: [
+      { name:'Salmon Fillet', factor:0.85 },
+      { name:'Tuna Steak',    factor:0.70 },
+      { name:'Swordfish',     factor:1.00 },
+      { name:'Halibut',       factor:0.90 },
+    ],
+    doneness: [
+      { label:'Medium',   temp:135, factor:0.80 },
+      { label:'Well Done',temp:145, factor:1.10 },
+    ],
+  },
+};
+
+// ─── STATE ──────────────────────────────────────────────────────
+const state = {
+  protein:    null,
+  cut:        null,
+  cutFactor:  1.0,
+  thickness:  1.0,
+  heat:       null,
+  heatFactor: 1.0,
+  doneness:   null,
+  doneTemp:   135,
+  doneFactor: 1.0,
+  winter:     false,
+  altitude:   false,
+};
+
+// Calculated times (seconds)
+const times = { sideA:0, sideB:0, finish:0, rest:0 };
+
+// In-memory favorites (no localStorage — sandbox-safe)
+let favorites = [];
+let nextFavId = 1;
+
+// Active cook
+const cook = {
+  running:      false,
+  paused:       false,
+  stage:        0,   // 0=sideA, 1=sideB, 2=finish, 3=rest
+  total:        0,   // duration of current stage (s)
+  remaining:    0,
+  startTime:    0,
+  tickInterval: null,
+};
+
+let audioCtx = null;
+let alarmNode = null;
+
+// ─── TABS ────────────────────────────────────────────────────────
+function switchTab(name) {
+  ['timer','guide','favorites'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===name);
+    document.getElementById('tab-'+t).setAttribute('aria-selected', t===name);
+    document.getElementById('panel-'+t).classList.toggle('active', t===name);
+    document.getElementById('panel-'+t).classList.toggle('hidden', t!==name);
+  });
+  if (name==='favorites') renderFavorites();
+}
+
+// ─── PROTEIN ────────────────────────────────────────────────────
+function selectProtein(key) {
+  state.protein  = key;
+  state.cut      = null;
+  state.cutFactor = 1.0;
+
+  document.querySelectorAll('.protein-btn').forEach(b => {
+    const active = b.id === 'cat-'+key;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-pressed', active);
+  });
+
+  buildCuts(key);
+  show('sect-cut');
+
+  // Validate doneness for this protein
+  const opts = MEAT_DB[key].doneness;
+  if (!state.doneness || !opts.find(o => o.label===state.doneness)) {
+    state.doneness  = opts[0].label;
+    state.doneTemp  = opts[0].temp;
+    state.doneFactor = opts[0].factor;
+  }
+  buildDoneness(key);
+
+  show('sect-thickness');
+  show('sect-heat');
+  show('sect-doneness');
+  show('sect-env');
+  calculate();
+}
+
+// ─── CUTS ────────────────────────────────────────────────────────
+function buildCuts(key) {
+  const grid = document.getElementById('cut-grid');
+  grid.innerHTML = '';
+  MEAT_DB[key].cuts.forEach(cut => {
+    const btn = document.createElement('button');
+    btn.className = 'cut-btn' + (cut.name===state.cut ? ' active' : '');
+    btn.textContent = cut.name;
+    btn.setAttribute('aria-pressed', cut.name===state.cut);
+    btn.addEventListener('click', () => selectCut(cut.name, cut.factor, btn));
+    grid.appendChild(btn);
+  });
+  // Auto-select first cut
+  if (!state.cut) {
+    const first = MEAT_DB[key].cuts[0];
+    state.cut       = first.name;
+    state.cutFactor = first.factor;
+    grid.firstChild.classList.add('active');
+    grid.firstChild.setAttribute('aria-pressed', 'true');
+  }
+}
+
+function selectCut(name, factor, btnEl) {
+  state.cut       = name;
+  state.cutFactor = factor;
+  document.querySelectorAll('.cut-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-pressed', 'false');
+  });
+  btnEl.classList.add('active');
+  btnEl.setAttribute('aria-pressed', 'true');
+  calculate();
+}
+
+// ─── HEAT ────────────────────────────────────────────────────────
+function selectHeat(key, factor) {
+  state.heat       = key;
+  state.heatFactor = factor;
+  ['medium','high'].forEach(k => {
+    const active = k === key;
+    document.getElementById('heat-'+k).classList.toggle('active', active);
+    document.getElementById('heat-'+k).setAttribute('aria-pressed', active);
+  });
+  calculate();
+}
+
+// ─── DONENESS ────────────────────────────────────────────────────
+function buildDoneness(key) {
+  const row = document.getElementById('doneness-row');
+  row.innerHTML = '';
+  MEAT_DB[key].doneness.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'doneness-btn' + (opt.label===state.doneness ? ' active' : '');
+    btn.textContent = opt.label;
+    btn.setAttribute('aria-pressed', opt.label===state.doneness);
+    btn.addEventListener('click', () => {
+      state.doneness  = opt.label;
+      state.doneTemp  = opt.temp;
+      state.doneFactor = opt.factor;
+      row.querySelectorAll('.doneness-btn').forEach(b => {
+        b.classList.remove('active'); b.setAttribute('aria-pressed','false');
+      });
+      btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+      calculate();
+    });
+    row.appendChild(btn);
+  });
+}
+
+// ─── THICKNESS ──────────────────────────────────────────────────
+document.getElementById('thickness-slider').addEventListener('input', function() {
+  state.thickness = parseFloat(this.value);
+  document.getElementById('thickness-display').textContent = state.thickness.toFixed(2).replace('.00','.0') + '"';
+  calculate();
+});
+
+// ─── ENV ─────────────────────────────────────────────────────────
+function onEnvChange() {
+  state.winter   = document.getElementById('toggle-winter').checked;
+  state.altitude = document.getElementById('toggle-altitude').checked;
+  calculate();
+}
+
+// ─── CALCULATE ──────────────────────────────────────────────────
+function calculate() {
+  if (!state.protein || !state.cut || !state.heat || !state.doneness) return;
+
+  const base = 7.5; // base minutes for 1" med-rare ribeye on high
+  let totalMins = base * state.thickness * state.doneFactor * state.cutFactor / state.heatFactor;
+  if (state.winter)   totalMins *= 1.15;
+  if (state.altitude) totalMins *= 1.25;
+
+  const sideA  = Math.min(totalMins * 0.35, 5) * 60;
+  const sideB  = sideA;
+  const finish = Math.max(0, (totalMins * 60) - sideA - sideB);
+  const rest   = Math.max(3 * 60, state.thickness * 5 * 60);
+
+  times.sideA  = Math.round(sideA);
+  times.sideB  = Math.round(sideB);
+  times.finish = Math.round(finish);
+  times.rest   = Math.round(rest);
+
+  document.getElementById('t-side-a').textContent  = fmtShort(times.sideA);
+  document.getElementById('t-side-b').textContent  = fmtShort(times.sideB);
+  document.getElementById('t-finish').textContent  = times.finish > 0 ? fmtShort(times.finish) : '—';
+  document.getElementById('t-rest').textContent    = fmtShort(times.rest);
+
+  const envNote = [
+    state.winter   ? '❄️ cold' : '',
+    state.altitude ? '🏔 altitude' : '',
+  ].filter(Boolean).join(' · ');
+
+  document.getElementById('results-meta').textContent =
+    `${state.cut} · ${state.thickness}" · ${state.doneness} · ${state.heat} heat` +
+    (envNote ? ` · ${envNote}` : '');
+
+  show('sect-results');
+}
+
+function fmtShort(s) {
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return sec === 0 ? `${m}m` : `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+function fmtDisplay(s) {
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
+// ─── COOK ────────────────────────────────────────────────────────
+const STAGES = ['sideA','sideB','finish','rest'];
+const STAGE_LABELS = ['Sear Side A','Flip! Sear Side B','Indirect Heat','Rest'];
+const STAGE_PILLS  = ['side-a','side-b','finish','rest'];
+const STAGE_INSTRUCTIONS = [
+  'Place on hot grill — don\'t touch or move it',
+  'Flip once. Don\'t press down.',
+  'Move to indirect heat, close lid',
+  'Off the grill. Loosely tent with foil.',
+];
+
+function startCook() {
+  initAudio();
+  show('active-timer');
+  hide('setup-form');
+  cook.stage = 0;
+  runStage(0);
+}
+
+function runStage(idx) {
+  // Skip zero-length stages (e.g. finish=0)
+  while (idx < STAGES.length && times[STAGES[idx]] <= 0) idx++;
+  if (idx >= STAGES.length) { finishCook(); return; }
+
+  cook.stage     = idx;
+  cook.total     = times[STAGES[idx]];
+  cook.remaining = cook.total;
+  cook.paused    = false;
+  cook.running   = true;
+  cook.startTime = performance.now();
+
+  updateStageUI(idx);
+  document.getElementById('btn-pause').textContent = '⏸ Pause';
+
+  clearInterval(cook.tickInterval);
+  cook.tickInterval = setInterval(tick, 250);
+}
+
+function tick() {
+  if (cook.paused) return;
+  const elapsed = (performance.now() - cook.startTime) / 1000;
+  cook.remaining = Math.max(0, cook.total - elapsed);
+
+  document.getElementById('timer-display').textContent = fmtDisplay(cook.remaining);
+
+  const pct = (cook.remaining / cook.total) * 100;
+  document.getElementById('timer-progress-fill').style.width = pct + '%';
+
+  if (cook.remaining <= 0) {
+    clearInterval(cook.tickInterval);
+    cook.running = false;
+    playAlarm();
+    // Advance to next stage after 3 s
+    setTimeout(() => {
+      stopAlarm();
+      runStage(cook.stage + 1);
+    }, 3000);
+  }
+}
+
+function updateStageUI(idx) {
+  document.getElementById('timer-stage').textContent       = STAGE_LABELS[idx];
+  document.getElementById('timer-instruction').textContent = STAGE_INSTRUCTIONS[idx];
+  document.getElementById('timer-display').textContent     = fmtDisplay(cook.total);
+
+  const disp = document.getElementById('timer-display');
+  disp.className = 'timer-display';
+
+  STAGE_PILLS.forEach((pid, i) => {
+    const el = document.getElementById('pill-'+pid);
+    el.classList.remove('active','done');
+    if (i < idx) el.classList.add('done');
+    if (i === idx) el.classList.add('active');
+  });
+
+  document.getElementById('timer-progress-fill').style.width = '100%';
+  document.getElementById('timer-progress-fill').style.background = 'var(--amber)';
+}
+
+function finishCook() {
+  clearInterval(cook.tickInterval);
+  cook.running = false;
+  document.getElementById('timer-stage').textContent = 'Done! 🎉';
+  document.getElementById('timer-display').textContent = '✓';
+  document.getElementById('timer-display').className = 'timer-display done';
+  document.getElementById('timer-instruction').textContent = 'Perfect cook. Time to eat.';
+  document.getElementById('timer-progress-fill').style.width = '100%';
+  document.getElementById('timer-progress-fill').style.background = 'var(--green)';
+  STAGE_PILLS.forEach(pid => document.getElementById('pill-'+pid).classList.add('done'));
+  document.getElementById('btn-pause').disabled = true;
+  haptic('heavy');
+}
+
+function togglePause() {
+  if (!cook.running && !cook.paused) return;
+  cook.paused = !cook.paused;
+  if (cook.paused) {
+    // Save remaining and pause
+    const elapsed = (performance.now() - cook.startTime) / 1000;
+    cook.remaining = Math.max(0, cook.total - elapsed);
+    document.getElementById('btn-pause').textContent = '▶ Resume';
+  } else {
+    // Resume: reset startTime so elapsed calc is correct
+    cook.total     = cook.remaining;
+    cook.startTime = performance.now();
+    document.getElementById('btn-pause').textContent = '⏸ Pause';
+  }
+}
+
+function cancelCook() {
+  clearInterval(cook.tickInterval);
+  cook.running = false;
+  stopAlarm();
+  hide('active-timer');
+  show('setup-form');
+  document.getElementById('btn-pause').disabled = false;
+  document.getElementById('btn-pause').textContent = '⏸ Pause';
+}
+
+// ─── AUDIO ──────────────────────────────────────────────────────
+function initAudio() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch(e) { /* no audio, that's ok */ }
+}
+
+function playAlarm() {
+  if (!audioCtx) return;
+  stopAlarm();
+  try {
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.connect(audioCtx.destination);
+
+    // Multi-tone alarm: ascending beeps for urgency
+    alarmNode = audioCtx.createOscillator();
+    alarmNode.type = 'sine';
+    const notes = [523.25, 659.25, 783.99, 659.25, 523.25]; // C5 E5 G5 E5 C5 (repeating pattern)
+    const now = audioCtx.currentTime;
+    const noteDuration = 0.15;
+    notes.forEach((hz, i) => {
+      alarmNode.frequency.setValueAtTime(hz, now + i * noteDuration);
+    });
+    alarmNode.connect(gain);
+    alarmNode.start(now);
+    alarmNode.stop(now + notes.length * noteDuration + 0.2);
+    alarmNode.onended = () => alarmNode = null;
+  } catch(e) { alarmNode = null; }
+
+  document.getElementById('alarm-banner').classList.add('visible');
+  haptic('heavy');
+}
+
+function stopAlarm() {
+  try { if (alarmNode) { alarmNode.stop(); alarmNode = null; } } catch(e) {}
+  document.getElementById('alarm-banner').classList.remove('visible');
+}
+
+// ─── HAPTICS ────────────────────────────────────────────────────
+// Capacitor-optional: check at runtime, never block
+function haptic(style) {
+  try {
+    const cap = window.Capacitor;
+    if (cap && cap.Plugins && cap.Plugins.Haptics) {
+      const { Haptics, ImpactStyle } = cap.Plugins;
+      Haptics.impact({ style: ImpactStyle[style==='heavy'?'Heavy':style==='medium'?'Medium':'Light'] });
+    }
+  } catch(e) { /* not available in browser — that's fine */ }
+}
+
+// ─── FAVORITES ──────────────────────────────────────────────────
+function openSaveModal() {
+  if (!state.protein) { showToast('Set up a cook first'); return; }
+  document.getElementById('fav-name-input').value = '';
+  document.getElementById('save-modal').classList.add('open');
+  setTimeout(() => document.getElementById('fav-name-input').focus(), 50);
+}
+
+function closeSaveModal() {
+  document.getElementById('save-modal').classList.remove('open');
+}
+
+function confirmSave() {
+  const name = document.getElementById('fav-name-input').value.trim();
+  if (!name) { showToast('Please enter a name'); return; }
+  favorites.push({
+    id: nextFavId++,
+    name,
+    protein:    state.protein,
+    cut:        state.cut,
+    cutFactor:  state.cutFactor,
+    thickness:  state.thickness,
+    heat:       state.heat,
+    heatFactor: state.heatFactor,
+    doneness:   state.doneness,
+    doneTemp:   state.doneTemp,
+    doneFactor: state.doneFactor,
+    winter:     state.winter,
+    altitude:   state.altitude,
+    times: { ...times },
+  });
+  closeSaveModal();
+  showToast(`✓ Saved "${name}"`);
+  haptic('medium');
+}
+
+function loadFavorite(id) {
+  const fav = favorites.find(f => f.id===id);
+  if (!fav) return;
+  Object.assign(state, {
+    protein: fav.protein, cut: fav.cut, cutFactor: fav.cutFactor,
+    thickness: fav.thickness, heat: fav.heat, heatFactor: fav.heatFactor,
+    doneness: fav.doneness, doneTemp: fav.doneTemp, doneFactor: fav.doneFactor,
+    winter: fav.winter, altitude: fav.altitude,
+  });
+  // Sync slider & toggles
+  document.getElementById('thickness-slider').value = fav.thickness;
+  document.getElementById('thickness-display').textContent = fav.thickness + '"';
+  document.getElementById('toggle-winter').checked   = fav.winter;
+  document.getElementById('toggle-altitude').checked = fav.altitude;
+
+  switchTab('timer');
+  selectProtein(fav.protein);   // re-renders cuts & doneness
+  selectHeat(fav.heat, fav.heatFactor);
+  showToast(`✓ Loaded "${fav.name}"`);
+  haptic('medium');
+}
+
+function deleteFavorite(id) {
+  favorites = favorites.filter(f => f.id!==id);
+  renderFavorites();
+  showToast('Deleted');
+}
+
+function renderFavorites() {
+  const el = document.getElementById('fav-content');
+  if (favorites.length === 0) {
+    el.innerHTML = `
+      <div class="fav-empty">
+        <div class="fav-empty-icon">🔥</div>
+        <p>No favorites yet.<br>Cook something great and save it!</p>
+      </div>`;
+    return;
+  }
+  el.innerHTML = `<div class="fav-list">${favorites.map(fav => `
+    <div class="fav-card">
+      <div class="fav-card-info">
+        <p class="fav-card-name">${escHtml(fav.name)}</p>
+        <p class="fav-card-meta">${fav.cut} · ${fav.thickness}" · ${fav.doneness} · ${fav.heat} heat</p>
+      </div>
+      <button class="fav-btn-load" onclick="loadFavorite(${fav.id})" aria-label="Load ${escHtml(fav.name)}">Load</button>
+      <button class="fav-btn-del"  onclick="deleteFavorite(${fav.id})" aria-label="Delete ${escHtml(fav.name)}">✕</button>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ─── TOAST ──────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── UTILS ──────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ─── INIT ────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  selectProtein('beef');
+  selectHeat('high', 1.1);
+});
+
+// Resume audio context on any interaction (iOS safari requirement)
+document.addEventListener('pointerdown', () => {
+  if (audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+}, { once: true });
+</script>
+</body>
+</html>
