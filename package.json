@@ -1,33 +1,39 @@
 {
   "name": "grill-master",
-  "version": "2.0.0",
-  "description": "Science-backed grilling timer. Perfect times for any meat, cut, and doneness.",
-  "main": "grill-master.html",
+  "version": "3.0.0",
+  "description": "Science-backed grilling timer. A pitmaster's notebook.",
+  "main": "www/index.html",
   "type": "module",
   "scripts": {
-    "dev": "echo 'Open grill-master.html in your browser'",
-    "ios": "cap open ios",
-    "android": "cap open android"
+    "dev": "http-server www -p 4173 -c-1 -s &",
+    "serve": "http-server www -p 4173 -c-1",
+    "serve:lan": "http-server www -p 4173 -a 0.0.0.0 -c-1",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "ios": "npx cap open ios",
+    "ios:add": "npx cap add ios",
+    "ios:sync": "npx cap sync ios",
+    "ios:run": "npx cap run ios"
   },
-  "keywords": [
-    "grill",
-    "bbq",
-    "timer",
-    "cooking",
-    "thermometer"
-  ],
-  "author": "Your Name",
+  "keywords": ["grill", "bbq", "timer", "cooking", "thermometer", "pitmaster", "ios", "pwa"],
+  "author": "Dirk Beveridge",
   "license": "MIT",
   "devDependencies": {
     "@capacitor/cli": "^5.0.0",
+    "@playwright/test": "^1.48.0",
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {
     "@capacitor/core": "^5.0.0",
-    "@capacitor/android": "^5.0.0",
     "@capacitor/ios": "^5.0.0",
+    "@capacitor/android": "^5.0.0",
     "@capacitor/haptics": "^5.0.0",
-    "@capacitor/local-notifications": "^5.0.0"
+    "@capacitor/local-notifications": "^5.0.0",
+    "@capacitor/preferences": "^5.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/grill-master.git"
+    "url": "https://github.com/dirkwbeveridge/grill-master.git"
   }
 }

@@ -1,0 +1,18 @@
+{
+  "name": "Grill Master",
+  "short_name": "Grill Master",
+  "description": "Science-backed grilling timer. A pitmaster's notebook.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0a06",
+  "theme_color": "#0f0a06",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

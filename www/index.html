@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="charred">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0f0a06">
+  <meta name="description" content="Science-backed grilling times. A pitmaster's notebook.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Grill Master">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>Grill Master</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500;1,6..72,600&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ══════ HEADER ══════ -->
+  <header class="header">
+    <div class="header-top">
+      <div class="brand">Grill <em>Master</em></div>
+      <div class="folio" id="folio">№ 001</div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab-btn active" id="tab-timer" role="tab" aria-selected="true" aria-controls="panel-timer" data-tab="timer">Timer</button>
+      <button class="tab-btn" id="tab-queue" role="tab" aria-selected="false" aria-controls="panel-queue" data-tab="queue">Queue</button>
+      <button class="tab-btn" id="tab-log" role="tab" aria-selected="false" aria-controls="panel-log" data-tab="log">Log</button>
+      <button class="tab-btn" id="tab-temp" role="tab" aria-selected="false" aria-controls="panel-temp" data-tab="temp">Temp</button>
+    </nav>
+  </header>
+
+  <!-- ══════ MAIN ══════ -->
+  <main class="content">
+
+    <!-- ═══ TIMER TAB ═══ -->
+    <section class="tab-panel active" id="panel-timer" role="tabpanel" aria-labelledby="tab-timer">
+
+      <!-- SETUP (single screen) -->
+      <div id="setup-form">
+        <div class="block">
+          <div class="eyebrow">Today's Cook</div>
+          <h1 class="title">What are we <em>grilling</em>?</h1>
+        </div>
+
+        <!-- Grill type (Gas / Charcoal) -->
+        <div>
+          <div class="q-label"><span>Grill</span><span class="ans" id="ans-grill">Gas</span></div>
+          <div class="pills" id="grill-pills">
+            <button class="pill active" data-grill="gas">Gas</button>
+            <button class="pill" data-grill="charcoal">Charcoal</button>
+          </div>
+        </div>
+
+        <!-- Protein (Butcher Chart icons) -->
+        <div>
+          <div class="q-label"><span>Protein</span><span class="ans" id="ans-protein">—</span></div>
+          <div class="protein-grid" id="protein-grid"></div>
+        </div>
+
+        <!-- Cut -->
+        <div id="sect-cut" class="hidden">
+          <div class="q-label"><span>Cut</span><span class="ans" id="ans-cut">—</span></div>
+          <div class="pills" id="cut-pills"></div>
+        </div>
+
+        <!-- Thickness -->
+        <div id="sect-thickness" class="hidden">
+          <div class="q-label"><span>Thickness</span><span class="ans" id="ans-thickness">1.0″</span></div>
+          <div class="slider-row">
+            <div class="slider-track" id="slider-track">
+              <div class="slider-fill" id="slider-fill"></div>
+              <div class="slider-thumb" id="slider-thumb"></div>
+              <input type="range" min="0.5" max="2.5" step="0.25" value="1.0" class="slider-input" id="thickness-input" aria-label="Thickness in inches">
+            </div>
+            <div class="slider-val" id="thickness-val">1.0″</div>
+          </div>
+        </div>
+
+        <!-- Heat -->
+        <div id="sect-heat" class="hidden">
+          <div class="q-label"><span>Heat</span><span class="ans" id="ans-heat">—</span></div>
+          <div class="pills heat-pills" id="heat-pills">
+            <button class="pill pill-stack" data-heat="medium" data-factor="1.0"><span class="pill-main">Medium</span><span class="pill-sub">375–450°F</span></button>
+            <button class="pill pill-stack" data-heat="high" data-factor="1.1"><span class="pill-main">High</span><span class="pill-sub">450–550°F</span></button>
+          </div>
+        </div>
+
+        <!-- Doneness -->
+        <div id="sect-doneness" class="hidden">
+          <div class="q-label"><span>Doneness</span><span class="ans" id="ans-doneness">—</span></div>
+          <div class="pills" id="doneness-pills"></div>
+        </div>
+
+        <!-- Environment (collapsible — rarely set) -->
+        <div id="sect-env" class="hidden" style="margin-top:24px;">
+          <button class="disclosure-toggle" id="env-toggle" aria-expanded="false" aria-controls="env-content">
+            <span>Adjustments</span>
+            <span class="caret">+</span>
+          </button>
+          <div class="disclosure-content hidden" id="env-content">
+            <div class="toggle-row">
+              <div class="toggle-label">Cold weather <span class="hint">Below 50°F. Adds 15%.</span></div>
+              <button class="toggle" id="toggle-winter" aria-pressed="false" aria-label="Cold weather"></button>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-label">High altitude <span class="hint">5,000ft+. Adds 25%.</span></div>
+              <button class="toggle" id="toggle-altitude" aria-pressed="false" aria-label="High altitude"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charcoal cue (shown only when charcoal selected) -->
+        <div id="charcoal-cue" class="carryover-note hidden">
+          Two-zone fire. Direct for sear, indirect for finish. Lid closed when in doubt.
+        </div>
+
+        <!-- Results -->
+        <div id="sect-results" class="results hidden">
+          <div class="results-eyebrow">Cook Card</div>
+          <div class="results-stages">
+            <div class="r-stage"><div class="nm">Sear A</div><div class="v" id="t-side-a">—</div></div>
+            <div class="r-stage"><div class="nm">Sear B</div><div class="v" id="t-side-b">—</div></div>
+            <div class="r-stage"><div class="nm">Finish</div><div class="v" id="t-finish">—</div></div>
+            <div class="r-stage"><div class="nm">Rest</div><div class="v" id="t-rest">—</div></div>
+          </div>
+          <div class="results-meta">
+            <span id="results-meta-line">—</span>
+            <span class="target" id="results-target"></span>
+          </div>
+          <button class="btn-primary" id="btn-start-cook">Start Cook</button>
+        </div>
+      </div>
+
+      <!-- ACTIVE TIMER (Charred variant) -->
+      <div id="active-timer" class="timer hidden">
+        <div class="timer-eyebrow" id="timer-spec">—</div>
+
+        <div class="timer-block">
+          <div class="timer-stage-small" id="timer-stage-small">Side A</div>
+          <div class="timer-num" id="timer-display">0:00</div>
+          <div class="timer-instruction" id="timer-instruction">Place on hot grill. Don't move it.</div>
+        </div>
+
+        <div class="timer-progress" id="timer-progress">
+          <span data-stage="0"></span>
+          <span data-stage="1"></span>
+          <span data-stage="2"></span>
+          <span data-stage="3"></span>
+        </div>
+        <div class="timer-stages-row" id="timer-stages-row">
+          <span data-stage-label="0">Sear A</span>
+          <span data-stage-label="1">Sear B</span>
+          <span data-stage-label="2">Finish</span>
+          <span data-stage-label="3">Rest</span>
+        </div>
+
+        <div class="timer-meta">
+          <span>Target<span class="v target" id="timer-target">—</span></span>
+          <span>Pull<span class="v" id="timer-pull">—</span></span>
+        </div>
+
+        <div id="timer-carryover" class="carryover-note hidden"></div>
+
+        <div class="timer-actions">
+          <button id="btn-pause">Pause</button>
+          <button id="btn-cancel">End Cook</button>
+        </div>
+
+        <!-- "How'd it land?" prompt (shown after cook completes) -->
+        <div id="howd-prompt" class="howd-prompt hidden">
+          <div class="label">How'd it land?</div>
+          <div class="howd-options">
+            <button data-rating="under">Underdone</button>
+            <button data-rating="right">Right</button>
+            <button data-rating="over">Overdone</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ QUEUE TAB ═══ -->
+    <section class="tab-panel" id="panel-queue" role="tabpanel" aria-labelledby="tab-queue">
+      <div class="queue-head">
+        <div class="block" style="margin-bottom:0;">
+          <div class="eyebrow">On the Grill</div>
+          <h2 class="title">The <em>queue</em>.</h2>
+        </div>
+        <button class="add-to-queue" id="btn-add-queue">+ Add</button>
+      </div>
+      <div id="queue-list">
+        <div class="log-empty">Nothing on the grill yet.<br>Configure a cook on Timer, then tap Add.</div>
+      </div>
+    </section>
+
+    <!-- ═══ LOG TAB ═══ -->
+    <section class="tab-panel" id="panel-log" role="tabpanel" aria-labelledby="tab-log">
+      <div class="block">
+        <div class="eyebrow">The Notebook</div>
+        <h2 class="title">Past <em>cooks</em>.</h2>
+      </div>
+      <div id="log-list"></div>
+    </section>
+
+    <!-- ═══ TEMP TAB ═══ -->
+    <section class="tab-panel" id="panel-temp" role="tabpanel" aria-labelledby="tab-temp">
+      <div class="block">
+        <div class="eyebrow">Meat Thermometer 101</div>
+        <h2 class="title">The <em>numbers</em>.</h2>
+      </div>
+
+      <p class="temp-intro">Trust a probe, not a guess. These are the internal temperatures and visual cues for each level of doneness. Pull the meat 5°F before target — it rises while resting.</p>
+
+      <!-- Doneness cards -->
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#5a1a14;"></div>
+          <div>
+            <div class="temp-card-name">Rare</div>
+            <div class="temp-card-range">120–125°F <span class="celsius">(49–52°C)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">Cool, bright red center. Silky texture. Touch test: press your cheek — that's how it yields.</p>
+      </div>
+
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#822818;"></div>
+          <div>
+            <div class="temp-card-name">Medium-Rare</div>
+            <div class="temp-card-range">130–135°F <span class="celsius">(54–57°C)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">Warm, pink-red center. Slightly firmer, juicy. The preferred choice for most steaks. Touch: fingertip to thumb.</p>
+      </div>
+
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#a04812;"></div>
+          <div>
+            <div class="temp-card-name">Medium</div>
+            <div class="temp-card-range">140–145°F <span class="celsius">(60–63°C)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">Pink throughout, brown outer band. Firm but still moist. Touch: middle finger to thumb.</p>
+      </div>
+
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#c87044;"></div>
+          <div>
+            <div class="temp-card-name">Well Done</div>
+            <div class="temp-card-range">160°F+ <span class="celsius">(71°C+)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">No pink. Fully browned throughout. Firmer texture. Touch: ring finger to thumb (ball of hand is tense).</p>
+      </div>
+
+      <!-- USDA Safe Temps card -->
+      <div class="usda-card">
+        <div class="card-eyebrow">USDA Minimum Safe Temps</div>
+        <div class="usda-row">
+          <span class="usda-protein">Beef, Lamb (whole cuts)</span>
+          <span class="usda-temp">145°F + 3 min rest</span>
+        </div>
+        <div class="usda-row">
+          <span class="usda-protein">Pork</span>
+          <span class="usda-temp">145°F + 3 min rest</span>
+        </div>
+        <div class="usda-row">
+          <span class="usda-protein">Ground Meat</span>
+          <span class="usda-temp">160°F</span>
+        </div>
+        <div class="usda-row">
+          <span class="usda-protein">All Poultry</span>
+          <span class="usda-temp">165°F</span>
+        </div>
+        <div class="usda-row">
+          <span class="usda-protein">Fish / Seafood</span>
+          <span class="usda-temp">145°F</span>
+        </div>
+      </div>
+
+      <!-- Pro Tips card -->
+      <div class="tips-card">
+        <div class="card-eyebrow">Pro Tips</div>
+        <ul class="tips-list">
+          <li>Insert probe into the thickest part, away from bone or fat</li>
+          <li>Pull 5°F early — carryover cooking raises temp while resting</li>
+          <li>Rest 5 min minimum (10 min for thick cuts). Cover loose with foil</li>
+          <li>Pat dry before grilling — steam is the enemy of a good sear</li>
+          <li>Room-temp meat (30 min out of fridge) cooks more evenly</li>
+          <li>Don't press the meat — you're squeezing out the juices</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══ STAGE CONFIRM OVERLAY ══ -->
+<div class="confirm-overlay" id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="confirm-sheet">
+    <div class="confirm-eyebrow" id="confirm-eyebrow">Stage Change</div>
+    <h2 class="confirm-title" id="confirm-title"><em>Flip.</em></h2>
+    <p class="confirm-sub" id="confirm-sub">Flip once. Don't press down.</p>
+    <div class="confirm-actions">
+      <button class="btn-confirm-action" id="btn-confirm-action">Done</button>
+      <button class="btn-confirm-snooze" id="btn-confirm-snooze">+ 30 seconds</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SAVE MODAL (after cook completes) ══ -->
+<div class="modal-backdrop" id="save-modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+  <div class="modal-sheet">
+    <div class="modal-eyebrow">Log this cook</div>
+    <h2 class="modal-title" id="save-modal-title">Name it.</h2>
+    <p class="modal-sub">Saturday ribeye. Mom's birthday brisket. Whatever you'll remember.</p>
+    <input type="text" class="modal-input" id="fav-name-input" placeholder="Name this cook" maxlength="40">
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancel-save">Skip</button>
+      <button class="btn-save" id="btn-confirm-save">Log it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast" aria-live="polite">Logged</div>
+
+<!-- ══ ALARM BANNER ══ -->
+<div class="alarm-banner" id="alarm-banner" role="alert" aria-live="assertive">Flip — Tap to confirm</div>
+
+<script src="app.js" type="module"></script>
+</body>
+</html>

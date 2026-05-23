@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Grill Master Icon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0f0a06; }
+  .icon {
+    width: 1024px;
+    height: 1024px;
+    background: #0f0a06;
+    background-image: radial-gradient(ellipse at center, #1a120a 0%, #0f0a06 70%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
+  }
+  /* Vertical ember rule on the left — signature element of the design */
+  .rule {
+    position: absolute;
+    left: 132px;
+    top: 240px;
+    bottom: 240px;
+    width: 22px;
+    background: #d4661a;
+    border-radius: 1px;
+  }
+  /* Monogram block */
+  .mono-block {
+    position: absolute;
+    left: 200px;
+    right: 132px;
+    top: 240px;
+    bottom: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .eyebrow {
+    font-family: "Courier Prime", "Courier New", monospace;
+    font-size: 32px;
+    letter-spacing: 12px;
+    text-transform: uppercase;
+    color: #7a5a3a;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .gm {
+    font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
+    font-size: 480px;
+    line-height: 0.85;
+    letter-spacing: -0.05em;
+    color: #f5e4c8;
+    font-weight: 500;
+    margin-top: -40px;
+  }
+  .gm em {
+    font-style: italic;
+    color: #d4661a;
+    font-weight: 500;
+  }
+  .footer {
+    font-family: "Courier Prime", "Courier New", monospace;
+    font-size: 28px;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: #5c4a32;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+<div class="icon">
+  <div class="rule"></div>
+  <div class="mono-block">
+    <div class="eyebrow">№ 001</div>
+    <div class="gm">G<em>M</em></div>
+    <div class="footer">Pitmaster</div>
+  </div>
+</div>
+</body>
+</html>

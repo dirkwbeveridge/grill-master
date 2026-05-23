@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Playwright
+playwright-report/
+test-results/
+.playwright-mcp/
+
+# Claude Code / Superpowers internals
+.claude/
+.superpowers/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Build artifacts
+dist/
+*.log

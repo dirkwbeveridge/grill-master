@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grill Master — Brand Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0f0a06;
+      --surface:      #1a1208;
+      --surface-2:    #221810;
+      --border:       rgba(245,228,200,0.07);
+      --border-2:     rgba(245,228,200,0.13);
+      --ember:        #d4661a;
+      --ember-dim:    rgba(212,102,26,0.15);
+      --text:         #f5e4c8;
+      --text-muted:   #7a5a3a;
+      --text-faint:   #3a2818;
+      --font-mono:    'DM Mono', 'Courier New', monospace;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .page {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 80px 40px 120px;
+    }
+
+    @media (max-width: 600px) {
+      .page { padding: 48px 24px 80px; }
+    }
+
+    /* ── Header ── */
+    .brand-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 64px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-name {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .brand-doc-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    /* ── Section headings ── */
+    .section {
+      margin-bottom: 64px;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 32px;
+    }
+
+    /* ── Story ── */
+    .story {
+      border-left: 3px solid var(--ember);
+      padding-left: 28px;
+    }
+
+    .story p {
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .story p:last-child { margin-bottom: 0; }
+
+    .story strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* ── Brand blocks ── */
+    .brand-block {
+      margin-bottom: 48px;
+    }
+
+    .brand-block-heading {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 16px;
+    }
+
+    .brand-block p {
+      font-size: 15px;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .brand-block p:last-child { margin-bottom: 0; }
+
+    /* ── Promise callout ── */
+    .promise {
+      background: var(--surface);
+      border: 1px solid var(--border-2);
+      border-left: 3px solid var(--ember);
+      padding: 28px 32px;
+      margin: 48px 0;
+    }
+
+    .promise-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 12px;
+    }
+
+    .promise-text {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .promise-sub {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Voice rules ── */
+    .voice-rule {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .voice-rule:first-child { border-top: 1px solid var(--border); }
+
+    .voice-marker {
+      flex-shrink: 0;
+      width: 3px;
+      height: 20px;
+      background: var(--ember);
+      margin-top: 2px;
+    }
+
+    .voice-rule-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      min-width: 160px;
+    }
+
+    .voice-rule-desc {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 500px) {
+      .voice-rule { flex-wrap: wrap; }
+      .voice-rule-label { min-width: 100%; margin-bottom: 4px; }
+    }
+
+    /* ── Color swatches ── */
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .swatch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .swatch-color {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .swatch-name {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .swatch-hex {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-faint);
+      letter-spacing: 1px;
+    }
+
+    /* ── Timer preview ── */
+    .timer-preview {
+      background: var(--bg);
+      border: 1px solid var(--border-2);
+      padding: 28px 24px;
+      max-width: 320px;
+    }
+
+    .timer-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .timer-body {
+      border-left: 3px solid var(--ember);
+      padding-left: 16px;
+    }
+
+    .timer-stage-small {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin-bottom: 4px;
+    }
+
+    .timer-number {
+      font-family: var(--font-mono);
+      font-size: 64px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -3px;
+    }
+
+    .timer-stage-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--ember);
+      margin-top: 6px;
+    }
+
+    .timer-progress {
+      display: flex;
+      gap: 2px;
+      margin-top: 20px;
+    }
+
+    .timer-seg {
+      flex: 1;
+      height: 3px;
+      background: var(--text-faint);
+    }
+
+    .timer-seg.active { background: var(--ember); }
+
+    .timer-queue {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 1px;
+      color: var(--text-faint);
+    }
+
+    /* ── Closing ── */
+    .closing {
+      margin-top: 64px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Divider ── */
+    hr.rule {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 48px 0;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--ember);
+      background: var(--ember-dim);
+      padding: 2px 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <header class="brand-header">
+      <span class="brand-name">Grill Master</span>
+      <span class="brand-doc-label">Brand Overview</span>
+    </header>
+
+    <!-- Story -->
+    <section class="section">
+      <div class="section-label">The Story</div>
+      <div class="story">
+        <p>Marcus bought a 1.5-inch ribeye from the butcher on Friday. He pulled it at 2pm. Patted it dry. Seasoned it with salt and left it on the counter.</p>
+        <p>The grill has been running for 20 minutes. It's high heat. He knows this part.</p>
+        <p>What he doesn't know: when to flip. How long on indirect. Whether the rest time he's been guessing at — four minutes, sometimes five — is actually doing anything. He's overcooked it twice this year. Both times he cut in too early, watched the pink disappear, and felt it.</p>
+        <p>He opens Grill Master.</p>
+        <p>Four taps: Beef. Ribeye. High. Med-Rare. He drags the slider to 1.5 inches. The results appear without ceremony: Side A 3:30. Flip 3:30. Indirect 2:00. Rest 7:30. Target temp 135°F.</p>
+        <p>He taps Start Cook. The screen goes to the timer. Large monospace numbers. A vertical ember line on the left. The stage label reads: <strong>Side A.</strong></p>
+        <p>The grill is loud. He sets the phone on the side table, face up. He doesn't think about the time again.</p>
+        <p>3:30 later, the chime. The screen reads: <strong>Flip.</strong> He flips. One motion. Taps Confirm.</p>
+        <p>The cook runs. Indirect heat. The numbers count down. He's not watching. He trusts the sequence.</p>
+        <p>At Rest, the alarm fires. He pulls the steak. Sets it on the board. Waits. Seven minutes thirty seconds — the longest part, and for the first time he lets the full time run.</p>
+        <p>He cuts it at the two-thirds mark. Pink throughout to the edge. Exactly what he ordered at the butcher counter.</p>
+        <p>He names it. Saves it. <strong>Marcus Ribeye.</strong> One tap next time.</p>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- Brand outline -->
+    <section class="section">
+      <div class="section-label">Brand Outline</div>
+
+      <div class="brand-block">
+        <div class="brand-block-heading">What It Is</div>
+        <p>A science-backed grilling timer. Four-stage cook sequence — Sear Side A, Sear Side B, Indirect Heat, Rest — calculated from protein, cut, thickness, doneness level, and conditions. No guessing. No hardware.</p>
+      </div>
+
+      <div class="brand-block">
+        <div class="brand-block-heading">Who It's For</div>
+        <p>Home cooks who take the grill seriously. They've been grilling for years. They own good equipment and buy quality meat. They still second-guess the timing. Grill Master is for the cook who wants to stop improvising and start repeating.</p>
+      </div>
+
+      <div class="brand-block">
+        <div class="brand-block-heading">The Problem It Solves</div>
+        <p>Every cook has the same failure point: the flip decision and the pull decision. Guess wrong on either and a $28 ribeye becomes a lesson. Grill Master takes both decisions off the table. The timer tells you when. You execute.</p>
+      </div>
+    </section>
+
+    <!-- Promise -->
+    <div class="promise">
+      <div class="promise-label">The Promise</div>
+      <div class="promise-text">Cook it right. Every time.</div>
+      <div class="promise-sub">Not faster. Not easier. Right. Grill Master is for people who care about the outcome, not the shortcut.</div>
+    </div>
+
+    <hr class="rule">
+
+    <!-- Voice -->
+    <section class="section">
+      <div class="section-label">Voice — Pitmaster's Notebook</div>
+
+      <div class="voice-rule">
+        <div class="voice-marker"></div>
+        <div class="voice-rule-label">Imperatives</div>
+        <div class="voice-rule-desc">Commands, not invitations. <code>Cut.</code> Not <em>Step 2: Select your cut.</em> <code>Flip.</code> Not <em>Time to Flip!</em></div>
+      </div>
+      <div class="voice-rule">
+        <div class="voice-marker"></div>
+        <div class="voice-rule-label">Numbers as facts</div>
+        <div class="voice-rule-desc"><code>3:42</code> is not decorative. It's the answer. Every timer, temperature, and measurement in Courier monospace.</div>
+      </div>
+      <div class="voice-rule">
+        <div class="voice-marker"></div>
+        <div class="voice-rule-label">No enthusiasm</div>
+        <div class="voice-rule-desc">No exclamation points. No emoji. No "Let's grill!" energy. The app sounds like someone who has done this a thousand times.</div>
+      </div>
+      <div class="voice-rule">
+        <div class="voice-marker"></div>
+        <div class="voice-rule-label">Silence as voice</div>
+        <div class="voice-rule-desc">The app doesn't congratulate you. It tells you what to do next. Cook complete is two words, not a celebration.</div>
+      </div>
+      <div class="voice-rule">
+        <div class="voice-marker"></div>
+        <div class="voice-rule-label">Hierarchy by weight</div>
+        <div class="voice-rule-desc">Scale and weight carry meaning. The accent color appears once per screen. It orients. It doesn't decorate.</div>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- Visual identity -->
+    <section class="section">
+      <div class="section-label">Visual Identity — Charred</div>
+
+      <div class="brand-block">
+        <div class="brand-block-heading">Color</div>
+        <div class="palette">
+          <div class="swatch">
+            <div class="swatch-color" style="background:#0f0a06;"></div>
+            <div>
+              <span class="swatch-name">Background</span>
+              <span class="swatch-hex">#0f0a06</span>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#d4661a;"></div>
+            <div>
+              <span class="swatch-name">Ember</span>
+              <span class="swatch-hex">#d4661a</span>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#f5e4c8;"></div>
+            <div>
+              <span class="swatch-name">Primary text</span>
+              <span class="swatch-hex">#f5e4c8</span>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#7a5a3a;"></div>
+            <div>
+              <span class="swatch-name">Muted</span>
+              <span class="swatch-hex">#7a5a3a</span>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#3a2818;"></div>
+            <div>
+              <span class="swatch-name">Inactive</span>
+              <span class="swatch-hex">#3a2818</span>
+            </div>
+          </div>
+          <div class="swatch">
+            <div class="swatch-color" style="background:#1a1208;"></div>
+            <div>
+              <span class="swatch-name">Surface</span>
+              <span class="swatch-hex">#1a1208</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-block">
+        <div class="brand-block-heading">Layout Signature</div>
+        <p>One vertical ember line on the left. Large monospace number to the right. Stage label below in orange. This pattern holds from the iPhone screen to the Dynamic Island to the Watch face.</p>
+
+        <!-- Live mockup -->
+        <div class="timer-preview" style="margin-top:24px;">
+          <div class="timer-eyebrow">Ribeye / 1.5 in / Med-Rare</div>
+          <div class="timer-body">
+            <div class="timer-stage-small">Side A</div>
+            <div class="timer-number">3:42</div>
+            <div class="timer-stage-label">searing</div>
+          </div>
+          <div class="timer-progress">
+            <div class="timer-seg active"></div>
+            <div class="timer-seg"></div>
+            <div class="timer-seg"></div>
+            <div class="timer-seg"></div>
+          </div>
+          <div class="timer-queue">
+            <span>flip 3:42</span>
+            <span>finish 2:00</span>
+            <span>rest 7:30</span>
+            <span>done</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand-block">
+        <div class="brand-block-heading">Motion</div>
+        <p>Mechanical, not bouncy. Transitions complete and stop. No spring physics. No delight animations. <code>cubic-bezier(0.16, 1, 0.3, 1)</code> at 200ms. Stage transitions feel like a stage completing, not a level clearing.</p>
+      </div>
+    </section>
+
+    <hr class="rule">
+
+    <!-- What it is not -->
+    <section class="section">
+      <div class="section-label">What It Is Not</div>
+      <div class="brand-block">
+        <p>Not a recipe app. It does not suggest what to cook. It does not pair wine. It does not share your results. It is a precision instrument for one specific moment: the cook in progress. That's the entire product.</p>
+      </div>
+    </section>
+
+    <!-- Closing -->
+    <div class="closing">
+      The story ends the same way every Saturday. Marcus pulls the steak, cuts it, and it's right. He puts his phone away. That's the whole product.
+    </div>
+
+  </div>
+</body>
+</html>
