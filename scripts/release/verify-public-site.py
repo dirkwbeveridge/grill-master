@@ -6,7 +6,7 @@ from urllib.request import Request, urlopen
 BASE = "https://dirkwbeveridge.github.io/grill-master/"
 EXPECTED = {
     "": ("Grill Master: Backyard Pro", "support/", "privacy/"),
-    "support/": ("Support", "github.com/dirkwbeveridge/grill-master/issues"),
+    "support/": ("Support", "Common questions", "privacy/"),
     "privacy/": ("Privacy", "Your cook records stay local."),
     "assets/site.css": ("font-family",),
 }
@@ -19,6 +19,8 @@ def verify():
             if response.status != 200 or response.geturl() != BASE + path:
                 raise ValueError("Unexpected public document status or redirect")
             content = response.read(1024 * 1024).decode("utf-8")
+        if "github.com/dirkwbeveridge" in content or "GitHub Issues" in content:
+            raise ValueError("Public site contains a removed repository/profile or issue-support reference")
         if not all(text in content for text in required):
             raise ValueError("Public document content does not match the intended site")
 

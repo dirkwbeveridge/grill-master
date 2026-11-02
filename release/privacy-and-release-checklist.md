@@ -5,14 +5,15 @@ This checklist separates prepared repository material from account answers and n
 ## Public documents and hosting
 
 - [x] Static home, support, and privacy pages are prepared in `docs/` with local CSS and no third-party resources loaded by the pages.
-- [x] Support points to the actual repository: https://github.com/dirkwbeveridge/grill-master/issues.
+- [x] Repository/profile and GitHub Issues links removed from the public website at owner request.
+- [ ] Add and test the owner-selected private support email address; do not submit the app with an incomplete contact channel.
 - [x] A GitHub Actions Pages workflow publishes only `docs/`, on changes to `main` or manual workflow dispatch. It does not publish the application bundle or sell the app.
 - [x] Source review confirms external fonts were removed. See [privacy source inventory](privacy-source-inventory.md); final binary and native traffic verification remain pending.
 - [ ] Confirm timer/queue persistence matches the policy’s local session-storage description.
 - [x] Enable repository Pages with **GitHub Actions** as the source. Confirm the `github-pages` environment permits the intended deployment branch and the account/repository plan supports Pages.
 - [x] Complete an authorized deployment; all three pages and stylesheet passed live HTTPS/content checks in run 41419214890.
 - [ ] Verify in-app Support and Privacy links open these exact production URLs.
-- [ ] Release owner: confirm the legal operator/rights holder and jurisdiction-specific privacy notice requirements. **Legal operator name/address and a monitored private privacy/contact email are PENDING**; add any legally required fields to the policy before launch. GitHub Issues is public and is not a private contact channel.
+- [ ] Release owner: confirm the legal operator/rights holder and jurisdiction-specific privacy notice requirements. **Legal operator name/address and a monitored private privacy/contact email are PENDING**; add any legally required fields to the policy before launch. GitHub Issues is not a customer support channel.
 - [ ] Confirm the person operating the app can respond to privacy/support requests and that public support meets applicable App Store requirements. No response-time promise has been made.
 
 Intended URLs:

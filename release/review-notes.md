@@ -37,7 +37,7 @@ Please test Timer, Queue, Log, and Temp on your iPhone or iPad. Cooking times ar
 9. Add the Current Cook widget. Start, pause, resume, and cancel a main cook; check its snapshot and tap destination.
 10. On a compatible device with Live Activities enabled, check the lock-screen/Dynamic Island countdown and stage updates. Let a stage expire while away and verify it asks you to check the cook instead of claiming unattended stage completion.
 
-When reporting a bug, include device, OS, build, steps, expected result, actual result, and the relevant cook settings. Use TestFlight’s feedback mechanism for private diagnostic attachments; scrub personal information from anything posted in the public GitHub issue tracker.
+When reporting a bug, include device, OS, build, steps, expected result, actual result, and the relevant cook settings. Use TestFlight’s feedback mechanism for private diagnostic attachments. Public website support will use a private email address once the owner supplies and verifies it; GitHub Issues is not a customer support channel.
 
 ## Release evidence record
 
