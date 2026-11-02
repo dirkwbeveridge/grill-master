@@ -1,0 +1,69 @@
+name: Automatic TestFlight release
+on:
+  push:
+    branches: [codex/automatic-testflight]
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: 'Unused positive build number'
+        type: string
+        required: true
+        default: '2'
+      whats_new:
+        description: 'TestFlight What to Test'
+        type: string
+        required: true
+        default: 'Validate cooking timers, background reminders, Live Activities, and iPhone/iPad layouts.'
+permissions:
+  contents: read
+concurrency:
+  group: testflight-release
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select installed stable Xcode
+        run: python3 scripts/release/select-xcode.py >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx cap sync ios
+      - name: Validate compiled iPhone and iPad app before signing
+        run: bash scripts/release/validate-ios.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: automatic-release-native-screenshots
+          path: native-screenshots/
+          if-no-files-found: error
+          retention-days: 14
+  release:
+    needs: validate
+    runs-on: macos-15
+    timeout-minutes: 50
+    environment: testflight
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Select installed stable Xcode
+        run: python3 scripts/release/select-xcode.py >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx cap sync ios
+      - name: Preflight, provision, archive, upload, and verify Apple build
+        env:
+          BUILD_NUMBER: ${{ inputs.build_number || '2' }}
+          TESTFLIGHT_WHATS_NEW: ${{ inputs.whats_new || 'Validate cooking timers, background reminders, Live Activities, and iPhone/iPad layouts.' }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY_P8_BASE64: ${{ secrets.ASC_PRIVATE_KEY_P8_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: bash scripts/release/automatic-testflight.sh
