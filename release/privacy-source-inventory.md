@@ -20,7 +20,9 @@ an App Store privacy declaration or a capture of native network traffic.
   network capability, not evidence that this app collects data; verify actual
   traffic in the submitted build, including allowed/denied notifications and
   external links. No blanket assertion of zero network activity is made.
-- GitHub handles website requests and voluntary public issue submissions.
+- GitHub handles website hosting requests. Repository/profile and Issues links
+  were removed from the public site at owner request. Private email support is
+  planned; its verified address and privacy handling remain pending.
   Account for support practices under Apple's current disclosure rules before
   choosing the proposed “Data Not Collected” answer. Do not infer that answer
   solely from local cooking records or empty manifest collection arrays.
