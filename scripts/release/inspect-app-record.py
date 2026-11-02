@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read only the exact owner-supplied App Store app; never print credentials/bodies."""
 import importlib.util
+import re
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("app_inventory", Path(__file__).with_name("check-apple-access.py"))
@@ -15,7 +16,12 @@ if __name__ == "__main__":
         if app.get("id") != "6829659639":
             raise inventory.InventoryError("request_failed")
         attributes = app.get("attributes", {})
-        if attributes.get("bundleId") != "com.dirkwbeveridge.grillmaster":
+        bundle = attributes.get("bundleId", "")
+        if not isinstance(bundle, str) or not re.fullmatch(r"[A-Za-z0-9.-]{1,255}", bundle):
+            raise inventory.InventoryError("request_failed")
+        print("::notice title=Exact Apple app record::Registered Bundle ID: " + bundle)
+        print("::notice title=Exact Apple app record::Approved listing name matches: " + str(attributes.get("name") == "Grill Master: Backyard Pro"))
+        if bundle != "com.dirkwbeveridge.grillmaster":
             raise SystemExit("::error title=Exact Apple app record::Record is accessible, but its Bundle ID differs from the owner-supplied value. Do not provision or upload until reconciled.")
         print("::notice title=Exact Apple app record::Owner-supplied Apple ID is accessible and its Bundle ID matches.")
         if attributes.get("name") != "Grill Master: Backyard Pro":
