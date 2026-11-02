@@ -3,7 +3,8 @@ import Foundation
 
 // Reject a launch screen or blank WebView. This is not a screen-label or layout test.
 guard CommandLine.arguments.count == 2,
-      let bitmap = NSBitmapImageRep(contentsOfFile: CommandLine.arguments[1]) else {
+      let data = try? Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1])),
+      let bitmap = NSBitmapImageRep(data: data) else {
     exit(2)
 }
 var samples = 0

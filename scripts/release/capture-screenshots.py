@@ -65,8 +65,18 @@ def main():
     # Compile once on the macOS runner; no third-party image dependency is needed.
     temporary = tempfile.TemporaryDirectory(prefix="grill-capture-")
     checker = Path(temporary.name) / "check-capture-content"
-    run("xcrun", "swiftc", str(Path(__file__).with_name("check-capture-content.swift")),
-        "-o", str(checker))
+    compiler = subprocess.run([
+        "xcrun", "swiftc", str(Path(__file__).with_name("check-capture-content.swift")),
+        "-o", str(checker)
+    ], capture_output=True, text=True)
+    if compiler.returncode:
+        # Only compiler errors for this public helper, without runner paths.
+        for line in compiler.stderr.splitlines():
+            if "error:" in line:
+                message = line.split("error:", 1)[1].strip()[:400]
+                message = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+                print(f"::error title=Capture checker compilation::{message}", flush=True)
+        raise RuntimeError("Native capture content checker did not compile")
     catalog = json.loads(run("xcrun", "simctl", "list", "--json", capture=True))
     runtimes = [r for r in catalog["runtimes"] if r.get("isAvailable")
                 and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-")]
@@ -116,4 +126,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except RuntimeError as error:
+        message = str(error).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        print(f"::error title=Native screenshot capture::{message}", flush=True)
+        raise
