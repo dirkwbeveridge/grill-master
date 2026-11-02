@@ -29,7 +29,7 @@ jobs:
               printf -- '- `%s`: configured\n' "$name" >> "$GITHUB_STEP_SUMMARY"
             else
               printf -- '- `%s`: missing\n' "$name" >> "$GITHUB_STEP_SUMMARY"
-              printf 'Missing required binding: %s\n' "$name"
+              printf '::error title=Missing TestFlight binding::%s is not configured in the testflight environment.\n' "$name"
               missing=1
             fi
           done
