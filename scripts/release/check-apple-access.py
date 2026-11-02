@@ -28,6 +28,9 @@ P256_ALGORITHM = bytes.fromhex("06072a8648ce3d020106082a8648ce3d030107")
 BINDING_FORMATS = {"ASC_KEY_ID": "exactly 10 uppercase ASCII letters or digits",
                    "ASC_ISSUER_ID": "a UUID with 8-4-4-4-12 hexadecimal digits",
                    "APPLE_TEAM_ID": "exactly 10 uppercase ASCII letters or digits"}
+BINDING_LABELS = {"ASC_KEY_ID": "API key identifier",
+                  "ASC_ISSUER_ID": "API issuer identifier",
+                  "APPLE_TEAM_ID": "Apple developer membership identifier"}
 
 
 class InventoryError(Exception):
@@ -290,6 +293,9 @@ def main():
             for field in error.fields:
                 expected = BINDING_FORMATS[field]
                 report.row(f"{field} format", f"Invalid: expected {expected}")
+                # A mistakenly stored placeholder can cause GitHub to mask the
+                # field's name itself. A fixed descriptive label remains useful.
+                report.row("Invalid input category", BINDING_LABELS[field])
                 report.missing.append(f"Correct {field}: expected {expected}; surrounding whitespace is accepted.")
         else:
             report.missing.append(messages.get(error.kind, "Credential validation failed; verify the configured secrets privately."))

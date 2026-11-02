@@ -215,6 +215,15 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertIn("API authentication | Accepted", rendered)
 
+    def test_input_category_survives_platform_masking_of_field_names(self):
+        for field, label in inventory.BINDING_LABELS.items():
+            with self.subTest(field=field):
+                result, rendered = self.invoke(extra={field: "private-invalid-value"})
+                self.assertEqual(result, 1)
+                platform_rendered = rendered.replace(field, "***")
+                self.assertIn(f"Invalid input category: {label}", platform_rendered)
+                self.assertFalse(self.methods)
+
     def test_jwt_uses_stripped_identifiers_and_restores_environment(self):
         import json
         padded = dict(self.environment)
