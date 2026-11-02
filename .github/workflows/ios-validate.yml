@@ -30,3 +30,11 @@ jobs:
           path: native-screenshots/
           if-no-files-found: error
           retention-days: 14
+      - name: Retain rejected blank captures separately for diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-ios-capture-diagnostics
+          path: native-capture-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import time
 import tempfile
+import shutil
 
 BUNDLE_ID = "com.dirkbeveridge.grillmaster"
 CAPTURE_METHOD = "debug launch argument; real native app"
@@ -43,19 +44,18 @@ def launch_state(udid, state, timeout=20):
     raise RuntimeError(f"Debug route {state!r} was not consumed within {timeout}s")
 
 
-def capture_visible_content(udid, destination, checker, timeout=60):
+def capture_visible_content(udid, destination, checker, timeout=45):
     """Retry actual simulator captures while the system still shows a blank launch view."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         run("xcrun", "simctl", "io", udid, "screenshot", str(destination))
         result = subprocess.run([str(checker), str(destination)], check=False)
         if result.returncode == 0:
-            return
+            return True
         if result.returncode != 1:
             raise RuntimeError("Unable to inspect native screenshot content")
-        destination.unlink(missing_ok=True)
         time.sleep(2)
-    raise RuntimeError("Native screenshot remained blank; refusing to publish it")
+    return False
 
 
 def main():
@@ -115,10 +115,19 @@ def main():
                 "--batteryState", "charged", "--batteryLevel", "100")
             run("xcrun", "simctl", "install", udid, str(app))
             for state in ("configure", "temperatures"):
-                readiness = launch_state(udid, state)
                 filename = f"{family}-{state}.png"
-                capture_visible_content(udid, output / filename, checker)
-                evidence["captures"].append({"file": filename, "device": device["name"], **readiness})
+                for attempt in (1, 2):
+                    readiness = launch_state(udid, state)
+                    if capture_visible_content(udid, output / filename, checker):
+                        break
+                    diagnostics = output.parent / "native-capture-diagnostics"
+                    diagnostics.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(output / filename), str(diagnostics / f"{family}-{state}-blank-{attempt}.png"))
+                    print(f"::warning title=Native capture cold launch::{family} {state} remained blank on attempt {attempt}; diagnostic retained.", flush=True)
+                else:
+                    raise RuntimeError(f"{family} {state} remained blank after one relaunch; refusing to publish it")
+                evidence["captures"].append({"file": filename, "device": device["name"],
+                                            "launchAttempt": attempt, **readiness})
         finally:
             subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False)
             subprocess.run(["xcrun", "simctl", "delete", udid], check=False)
