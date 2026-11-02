@@ -6,7 +6,7 @@ English (U.S.) copy prepared November 1, 2026. This is a submission draft, not e
 
 | Field | Prepared value |
 | --- | --- |
-| Name | Grill Master |
+| Name | Grill Master: Backyard Pro |
 | Subtitle | Grill timer & cook log |
 | Primary category | Food & Drink |
 | Secondary category | Utilities, if appropriate in App Store Connect |
@@ -19,7 +19,7 @@ English (U.S.) copy prepared November 1, 2026. This is a submission draft, not e
 | Version/build | Source: 3.1 / build 2; release workflow supplies a new build number. Final archive/Apple record PENDING |
 | Copyright | PENDING — release owner must confirm year and legal rights holder |
 
-Name: 12 characters. Subtitle: 22 characters. Storefront pricing, taxes, and currency conversions are managed by Apple; $0.99 USD is a base-price instruction, not a promise of the same price worldwide.
+Name: 26 characters. Subtitle: 22 characters. Storefront pricing, taxes, and currency conversions are managed by Apple; $0.99 USD is a base-price instruction, not a promise of the same price worldwide.
 
 ## Promotional text
 
@@ -29,7 +29,7 @@ Plan the sear, follow the stages, and keep the cooks worth repeating. A grilling
 
 A little timing. A better cook.
 
-Grill Master is a grilling timer and a pitmaster’s notebook. Build an estimated cook plan, follow your cooking stages, and save the settings you want to use again.
+Grill Master: Backyard Pro is a grilling timer and a pitmaster’s notebook. Build an estimated cook plan, follow your cooking stages, and save the settings you want to use again.
 
 PLAN YOUR COOK
 Choose your protein and cut, set thickness where available, and select heat and doneness. Use gas or charcoal settings, with optional cold-weather and altitude adjustments.
