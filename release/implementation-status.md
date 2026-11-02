@@ -26,8 +26,13 @@ The installed app keeps the short name Grill Master. Requested paid download:
 - Automatic TestFlight workflow:
   https://github.com/dirkwbeveridge/grill-master/actions/runs/41412396529
   This attempt failed in unsigned validation, before signing/upload started.
-  Replacement validation with bounded diagnostics is run 41413184587
-  (source f31e38c16a9e6c69ad8fb2ed1e21d5904c832091).
+  Diagnostic validation run 41413184587 confirmed simulator compilation succeeded,
+  then failed because a capture remained blank. Replacement validation is run
+  41414814002 (source 3fa30624f63067c0273aa9744ebf347ab4aee2a5).
+  It records rejected images separately and permits one bounded app relaunch.
+  The screenshot export workflow waits for that exact run, rejects failed runs,
+  and can preserve only its four validated PNGs and public provenance on
+  `codex/native-screenshots-v3`. Visual acceptance is still required.
 - The owner reports the shared App Group and new App Store Connect app complete.
   Fresh inventory run 41412398469 still cannot see an app matching
   `com.dirkbeveridge.grillmaster`. Bundle ID/Apple ID confirmation is pending.
@@ -47,7 +52,8 @@ The installed app keeps the short name Grill Master. Requested paid download:
   review rejected the former's OS confirmation overlays and the latter's blank
   iPad configuration image. Neither is a complete accepted screenshot set.
 - Replacement capture now retries actual simulator images until visible app
-  content appears; it rejects persistent blank screens. This does not replace
+  content appears and permits one bounded relaunch; it rejects persistent blank
+  screens. Launch attempts are recorded and cold-launch reliability remains open. This does not replace
   visual route/layout acceptance. No screenshot pixels or cook states are fabricated.
 - Browser review evidence remains under `release/evidence/web-review/` and must
   not be submitted as native App Store screenshots.
