@@ -14,8 +14,8 @@ English (U.S.) copy prepared November 1, 2026. This is a submission draft, not e
 | Privacy policy URL | https://dirkwbeveridge.github.io/grill-master/privacy/ |
 | Marketing URL (optional) | https://dirkwbeveridge.github.io/grill-master/ |
 | Base price | $0.99 USD paid download; choose the corresponding available price point in App Store Connect |
-| App Store numeric ID | 6829659639 — supplied by owner; API verification pending |
-| Bundle ID | Source: `com.dirkwbeveridge.grillmaster`; confirm registered identifier against the signed archive |
+| App Store numeric ID | 6829659639 — API read-back confirmed listing name and bundle ID |
+| Bundle ID | Source: `com.dbeveridge.grillmaster`; confirm registered identifier against the signed archive |
 | Version/build | Source: 3.1 / build 2; release workflow supplies a new build number. Final archive/Apple record PENDING |
 | Copyright | PENDING — release owner must confirm year and legal rights holder |
 

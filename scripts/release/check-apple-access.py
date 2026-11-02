@@ -26,7 +26,7 @@ SPEC = importlib.util.spec_from_file_location("apple_inventory_asc", Path(__file
 asc = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(asc)
 
-BUNDLES = {"Main app": "com.dirkwbeveridge.grillmaster", "Widget extension": "com.dirkwbeveridge.grillmaster.widgets"}
+BUNDLES = {"Main app": "com.dbeveridge.grillmaster", "Widget extension": "com.dbeveridge.grillmaster.widgets"}
 DISTRIBUTION_TYPES = {"DISTRIBUTION", "IOS_DISTRIBUTION"}
 P256_ALGORITHM = bytes.fromhex("06072a8648ce3d020106082a8648ce3d030107")
 BINDING_FORMATS = {"ASC_KEY_ID": "exactly 10 uppercase ASCII letters or digits",

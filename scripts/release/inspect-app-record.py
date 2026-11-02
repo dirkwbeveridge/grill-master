@@ -21,7 +21,7 @@ if __name__ == "__main__":
             raise inventory.InventoryError("request_failed")
         print("::notice title=Exact Apple app record::Registered Bundle ID: " + bundle)
         print("::notice title=Exact Apple app record::Approved listing name matches: " + str(attributes.get("name") == "Grill Master: Backyard Pro"))
-        if bundle != "com.dirkwbeveridge.grillmaster":
+        if bundle != "com.dbeveridge.grillmaster":
             raise SystemExit("::error title=Exact Apple app record::Record is accessible, but its Bundle ID differs from the owner-supplied value. Do not provision or upload until reconciled.")
         print("::notice title=Exact Apple app record::Owner-supplied Apple ID is accessible and its Bundle ID matches.")
         if attributes.get("name") != "Grill Master: Backyard Pro":

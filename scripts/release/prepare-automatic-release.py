@@ -22,7 +22,7 @@ inventory = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(inventory)
 
 ROOT = Path(__file__).resolve().parents[2]
-MAIN = "com.dirkwbeveridge.grillmaster"
+MAIN = "com.dbeveridge.grillmaster"
 WIDGET = MAIN + ".widgets"
 GROUP = "group.com.dirkbeveridge.grillmaster"
 DEFAULT_NOTES = "Validate cooking timers, background reminders, Live Activities, and iPhone/iPad layouts."

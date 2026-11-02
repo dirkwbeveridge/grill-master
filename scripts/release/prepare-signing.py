@@ -11,8 +11,8 @@ import sys
 
 from apple_key import decode_private_key
 
-BUNDLES = {"IOS_APP_PROFILE_BASE64": "com.dirkwbeveridge.grillmaster",
-           "IOS_WIDGET_PROFILE_BASE64": "com.dirkwbeveridge.grillmaster.widgets"}
+BUNDLES = {"IOS_APP_PROFILE_BASE64": "com.dbeveridge.grillmaster",
+           "IOS_WIDGET_PROFILE_BASE64": "com.dbeveridge.grillmaster.widgets"}
 GROUP = "group.com.dirkbeveridge.grillmaster"
 
 

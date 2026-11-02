@@ -16,7 +16,7 @@ import urllib.parse
 import urllib.request
 
 API = "https://api.appstoreconnect.apple.com/v1"
-BUNDLE = "com.dirkwbeveridge.grillmaster"
+BUNDLE = "com.dbeveridge.grillmaster"
 
 
 def b64url(value):

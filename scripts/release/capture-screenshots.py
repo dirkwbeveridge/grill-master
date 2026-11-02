@@ -8,7 +8,7 @@ import time
 import tempfile
 import shutil
 
-BUNDLE_ID = "com.dirkwbeveridge.grillmaster"
+BUNDLE_ID = "com.dbeveridge.grillmaster"
 CAPTURE_METHOD = "debug launch argument; real native app"
 READY_RELATIVE_PATH = Path("Library/Caches/GrillMaster/debug-route-ready.json")
 

@@ -33,11 +33,13 @@ The installed app keeps the short name Grill Master. Requested paid download:
   The screenshot export workflow waits for that exact run, rejects failed runs,
   and can preserve only its four validated PNGs and public provenance on
   `codex/native-screenshots-v3`. Visual acceptance is still required.
-- The owner reports the shared App Group and new App Store Connect app complete.
-  Fresh inventory run 41412398469 still cannot see an app matching
-  `com.dirkwbeveridge.grillmaster`. Bundle ID/Apple ID confirmation is pending.
-  API authentication and both registered identifiers are confirmed; App Group
-  membership is not yet independently established.
+- The owner supplied Apple ID 6829659639. Direct API read-back confirmed the
+  approved listing name and actual registered bundle ID `com.dbeveridge.grillmaster`
+  in run 41416629827. The originally supplied bundle spellings did not match.
+  Project and helpers now use that registered ID and `.widgets` for the extension.
+  The shared App Group stays `group.com.dirkbeveridge.grillmaster` pending the
+  owner's exact group confirmation; App Group names need not match bundle IDs.
+  Matching extension registration and both group associations require verification.
 - Automatic signing uses the four existing secrets. It checks a signed archive's
   app/widget identifiers, versions, signatures, embedded profiles, and team/group
   entitlements before uploading, then verifies Apple visibility and What to Test.
