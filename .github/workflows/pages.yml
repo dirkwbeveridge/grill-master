@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/**'
       - '.github/workflows/pages.yml'
+      - 'scripts/release/verify-public-site.py'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,23 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      - name: Use the workflow as the sole Pages publishing source
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const target = { owner: context.repo.owner, repo: context.repo.repo };
+            let site = await github.rest.repos.getPages(target);
+            if (site.data.build_type !== 'workflow') {
+              await github.request('PUT /repos/{owner}/{repo}/pages', {
+                ...target, build_type: 'workflow'
+              });
+              site = await github.rest.repos.getPages(target);
+            }
+            if (site.data.build_type !== 'workflow') {
+              core.setFailed('Pages must use workflow publishing before deployment.');
+            } else {
+              core.notice('Pages publishing source verified: workflow.');
+            }
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload public documents
@@ -37,3 +55,5 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify public home, support, privacy, and stylesheet
+        run: python3 scripts/release/verify-public-site.py
