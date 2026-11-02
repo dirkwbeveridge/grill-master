@@ -184,8 +184,62 @@ class InventoryTests(unittest.TestCase):
     def test_invalid_issuer_is_rejected_without_echo(self):
         result, rendered = self.invoke(extra={"ASC_ISSUER_ID": "invalid-sensitive-issuer"})
         self.assertEqual(result, 1)
-        self.assertIn("input format is invalid", rendered)
+        self.assertIn("ASC_ISSUER_ID format | Invalid: expected a UUID", rendered)
+        self.assertNotIn("ASC_KEY_ID format | Invalid", rendered)
+        self.assertNotIn("APPLE_TEAM_ID format | Invalid", rendered)
         self.assertFalse(self.methods)
+
+    def test_all_invalid_identifier_fields_report_names_and_formats_only(self):
+        invalid = {"ASC_KEY_ID": "private-invalid-key-id", "ASC_ISSUER_ID": "private-invalid-issuer", "APPLE_TEAM_ID": "private-invalid-team-id"}
+        result, rendered = self.invoke(extra=invalid)
+        self.assertEqual(result, 1)
+        for name in invalid:
+            self.assertIn(f"{name} format | Invalid: expected", rendered)
+            self.assertIn(f"Correct {name}: expected", rendered)
+        self.assertIn("exactly 10 uppercase ASCII letters or digits", rendered)
+        self.assertIn("8-4-4-4-12 hexadecimal digits", rendered)
+        self.assertFalse(self.methods)
+
+    def test_single_invalid_key_or_team_reports_only_affected_name(self):
+        for field in ("ASC_KEY_ID", "APPLE_TEAM_ID"):
+            with self.subTest(field=field):
+                result, rendered = self.invoke(extra={field: "private-invalid-value"})
+                self.assertEqual(result, 1)
+                self.assertIn(f"{field} format | Invalid", rendered)
+                for other in inventory.BINDING_FORMATS.keys() - {field}:
+                    self.assertNotIn(f"{other} format | Invalid", rendered)
+
+    def test_identifier_whitespace_is_accepted_in_inventory(self):
+        padded = {name: " \t" + self.environment[name] + "\r\n" for name in inventory.BINDING_FORMATS}
+        result, rendered = self.invoke(extra=padded)
+        self.assertEqual(result, 0)
+        self.assertIn("API authentication | Accepted", rendered)
+
+    def test_jwt_uses_stripped_identifiers_and_restores_environment(self):
+        import json
+        padded = dict(self.environment)
+        padded.update({name: " \t" + self.environment[name] + "\r\n" for name in inventory.BINDING_FORMATS})
+        with patch.dict(os.environ, padded):
+            with inventory.credentials():
+                for name in inventory.BINDING_FORMATS:
+                    self.assertEqual(os.environ[name], self.environment[name])
+                header, payload, _ = inventory.asc.jwt().split(".")
+                header = json.loads(base64.urlsafe_b64decode(header + "=="))
+                payload = json.loads(base64.urlsafe_b64decode(payload + "=="))
+                self.assertEqual(header["kid"], self.environment["ASC_KEY_ID"])
+                self.assertEqual(payload["iss"], self.environment["ASC_ISSUER_ID"])
+            for name in inventory.BINDING_FORMATS:
+                self.assertEqual(os.environ[name], padded[name])
+
+    def test_normalized_identifiers_are_restored_if_key_validation_fails(self):
+        padded = dict(self.environment, ASC_PRIVATE_KEY_P8_BASE64="invalid-private-input")
+        padded.update({name: " " + self.environment[name] + "\n" for name in inventory.BINDING_FORMATS})
+        with patch.dict(os.environ, padded):
+            with self.assertRaises(inventory.InventoryError):
+                with inventory.credentials():
+                    self.fail("Invalid private key must not enter credential context")
+            for name in inventory.BINDING_FORMATS:
+                self.assertEqual(os.environ[name], padded[name])
 
 
 if __name__ == "__main__":

@@ -17,7 +17,6 @@ import re
 import subprocess
 import tempfile
 import urllib.parse
-import uuid
 
 SPEC = importlib.util.spec_from_file_location("apple_inventory_asc", Path(__file__).with_name("app-store-connect.py"))
 asc = importlib.util.module_from_spec(SPEC)
@@ -26,11 +25,15 @@ SPEC.loader.exec_module(asc)
 BUNDLES = {"Main app": "com.dirkbeveridge.grillmaster", "Widget extension": "com.dirkbeveridge.grillmaster.widgets"}
 DISTRIBUTION_TYPES = {"DISTRIBUTION", "IOS_DISTRIBUTION"}
 P256_ALGORITHM = bytes.fromhex("06072a8648ce3d020106082a8648ce3d030107")
+BINDING_FORMATS = {"ASC_KEY_ID": "exactly 10 uppercase ASCII letters or digits",
+                   "ASC_ISSUER_ID": "a UUID with 8-4-4-4-12 hexadecimal digits",
+                   "APPLE_TEAM_ID": "exactly 10 uppercase ASCII letters or digits"}
 
 
 class InventoryError(Exception):
-    def __init__(self, kind):
+    def __init__(self, kind, fields=()):
         self.kind = kind
+        self.fields = fields
 
 
 class Report:
@@ -59,7 +62,7 @@ class Report:
 
     def annotations(self):
         for label, status in self.rows:
-            warning = status == "0" or any(word in status.lower() for word in ("missing", "failed", "denied", "rejected", "unknown", "unverified", "ambiguous", "unavailable"))
+            warning = status == "0" or any(word in status.lower() for word in ("missing", "failed", "invalid", "denied", "rejected", "unknown", "unverified", "ambiguous", "unavailable"))
             level = "warning" if warning else "notice"
             print(f"::{level} title=Apple signing inventory::{label}: {status}")
         for item in self.missing:
@@ -102,12 +105,27 @@ def credentials():
     names = ("ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_PRIVATE_KEY_P8_BASE64", "APPLE_TEAM_ID", "RUNNER_TEMP")
     if any(not os.environ.get(name) for name in names):
         raise InventoryError("missing_inputs")
-    if not re.fullmatch(r"[A-Z0-9]{10}", os.environ["ASC_KEY_ID"]) or not re.fullmatch(r"[A-Z0-9]{10}", os.environ["APPLE_TEAM_ID"]):
-        raise InventoryError("malformed_bindings")
+    normalized = {name: os.environ[name].strip() for name in BINDING_FORMATS}
+    invalid = []
+    for name, value in normalized.items():
+        if name == "ASC_ISSUER_ID":
+            if not re.fullmatch(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}", value):
+                invalid.append(name)
+        elif not re.fullmatch(r"[A-Z0-9]{10}", value):
+            invalid.append(name)
+    if invalid:
+        raise InventoryError("malformed_bindings", fields=tuple(invalid))
+    previous = {name: os.environ[name] for name in normalized}
+    os.environ.update(normalized)
     try:
-        uuid.UUID(os.environ["ASC_ISSUER_ID"])
-    except ValueError:
-        raise InventoryError("malformed_bindings") from None
+        with key_credentials():
+            yield
+    finally:
+        os.environ.update(previous)
+
+
+@contextmanager
+def key_credentials():
     try:
         temporary_root = Path(os.environ["RUNNER_TEMP"]).resolve(strict=True)
         checkout = Path(__file__).resolve().parents[2]
@@ -268,7 +286,13 @@ def main():
                     "unsafe_temp": "RUNNER_TEMP must be an existing directory outside the checkout.",
                     "malformed_key": "API private key input is malformed or is not an unencrypted PKCS#8 P-256 key."}
         report.row("Credential validation", "Failed")
-        report.missing.append(messages.get(error.kind, "Credential validation failed; verify the configured secrets privately."))
+        if error.kind == "malformed_bindings":
+            for field in error.fields:
+                expected = BINDING_FORMATS[field]
+                report.row(f"{field} format", f"Invalid: expected {expected}")
+                report.missing.append(f"Correct {field}: expected {expected}; surrounding whitespace is accepted.")
+        else:
+            report.missing.append(messages.get(error.kind, "Credential validation failed; verify the configured secrets privately."))
         report.access_failed = True
     except Exception:
         report.row("Inventory", "Failed safely; no diagnostic values disclosed")
