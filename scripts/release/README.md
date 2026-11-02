@@ -10,7 +10,7 @@ The checked-in release pipeline has not been run on macOS or against Apple from 
 2. Generate two **App Store distribution** provisioning profiles, one per identifier. Development, ad hoc, and enterprise profiles are rejected. Both profiles must include the shared App Group and match the distribution certificate and team.
 3. Export the Apple Distribution certificate **with its private key** as a password-protected `.p12`. This is separate from the App Store Connect API `.p8` key.
 4. Create an App Store Connect API key authorized to upload builds and manage TestFlight metadata for this app (App Manager access is appropriate). Keep the `.p8` outside the checkout and outside synced folders. Record its Key ID and Issuer ID privately. Do not paste these into issues or workflow inputs.
-5. Create a GitHub Actions environment named `testflight`. Configure any desired release-branch restrictions/reviewers there. Add these environment secrets using GitHub's encrypted secrets UI, or `gh secret set NAME --env testflight` with stdin from a protected local file; do not put secret values on the command line or commit them:
+5. Create a GitHub Actions environment named `testflight`. Configure any desired release-branch restrictions/reviewers there. Reuse existing matching bindings if already configured; otherwise add these environment secrets using GitHub's encrypted secrets UI, or `gh secret set NAME --env testflight` with stdin from a protected local file; do not put secret values on the command line or commit them:
 
 | Secret | Value |
 | --- | --- |

@@ -15,8 +15,8 @@ English (U.S.) copy prepared November 1, 2026. This is a submission draft, not e
 | Marketing URL (optional) | https://dirkwbeveridge.github.io/grill-master/ |
 | Base price | $0.99 USD paid download; choose the corresponding available price point in App Store Connect |
 | App Store numeric ID | PENDING — use the actual app record; do not invent a store link |
-| Bundle ID | PENDING — use the final registered identifier and signed archive |
-| Version/build | PENDING — copy from the final archive and App Store Connect build |
+| Bundle ID | Source: `com.dirkbeveridge.grillmaster`; confirm registered identifier against the signed archive |
+| Version/build | Source: 3.1 / build 2; release workflow supplies a new build number. Final archive/Apple record PENDING |
 | Copyright | PENDING — release owner must confirm year and legal rights holder |
 
 Name: 12 characters. Subtitle: 22 characters. Storefront pricing, taxes, and currency conversions are managed by Apple; $0.99 USD is a base-price instruction, not a promise of the same price worldwide.

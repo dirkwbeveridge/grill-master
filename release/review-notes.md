@@ -33,6 +33,9 @@ Please test Timer, Queue, Log, and Temp on your iPhone or iPad. Cooking times ar
 5. Background and reopen the app during an active stage. Relaunch after ending the app and check recovered cook/queue state. Check paused and expired stages separately.
 6. Save a named cook in the Log, relaunch, and load it. Report a save error without posting private data.
 7. Try large text, VoiceOver, external keyboard, Reduce Motion, iPad rotation/window resizing, and offline mode.
+8. On supported iOS versions, invoke Configure Cook, Active Cook, and Temperature Guide from Shortcuts/Siri. Verify the destination opens and no cook starts without confirmation.
+9. Add the Current Cook widget. Start, pause, resume, and cancel a main cook; check its snapshot and tap destination.
+10. On a compatible device with Live Activities enabled, check the lock-screen/Dynamic Island countdown and stage updates. Let a stage expire while away and verify it asks you to check the cook instead of claiming unattended stage completion.
 
 When reporting a bug, include device, OS, build, steps, expected result, actual result, and the relevant cook settings. Use TestFlight’s feedback mechanism for private diagnostic attachments; scrub personal information from anything posted in the public GitHub issue tracker.
 
