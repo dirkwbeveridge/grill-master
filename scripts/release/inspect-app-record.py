@@ -2,6 +2,9 @@
 """Read only the exact owner-supplied App Store app; never print credentials/bodies."""
 import importlib.util
 import re
+import base64
+import os
+import subprocess
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("app_inventory", Path(__file__).with_name("check-apple-access.py"))
@@ -11,6 +14,27 @@ spec.loader.exec_module(inventory)
 if __name__ == "__main__":
     try:
         with inventory.credentials():
+            certificates, _ = inventory.all_pages("/certificates", {
+                "filter[certificateType]": "DISTRIBUTION,IOS_DISTRIBUTION", "limit": "200",
+                "fields[certificates]": "certificateContent,expirationDate"})
+            teams = set()
+            for certificate in certificates:
+                value = certificate.get("attributes", {}).get("certificateContent", "")
+                try:
+                    data = base64.b64decode(value, validate=True)
+                except (ValueError, TypeError):
+                    continue
+                parsed = subprocess.run(["openssl", "x509", "-inform", "DER", "-noout", "-subject", "-nameopt", "RFC2253"],
+                                        input=data, capture_output=True)
+                if parsed.returncode == 0:
+                    match = re.search(rb"(?:^|,)OU=([A-Z0-9]{10})(?:,|$)", parsed.stdout)
+                    if match: teams.add(match.group(1).decode("ascii"))
+            if teams and os.environ["APPLE_TEAM_ID"].strip() not in teams:
+                raise SystemExit("::error title=Apple signing team::Configured APPLE_TEAM_ID does not match the team in accessible distribution certificates. Correct that secret before retrying signing; no certificate was changed.")
+            if teams:
+                print("::notice title=Apple signing team::Configured Team ID matches an accessible distribution certificate.")
+            else:
+                print("::warning title=Apple signing team::Certificate data did not establish the configured Team ID; verify it privately.")
             response = inventory.get("/apps/6829659639", {"fields[apps]": "bundleId,name"})
         app = response.get("data", {})
         if app.get("id") != "6829659639":

@@ -28,7 +28,7 @@ jobs:
       id-token: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Use the workflow as the sole Pages publishing source
         uses: actions/github-script@v7
         with:
