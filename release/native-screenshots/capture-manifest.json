@@ -1,0 +1,52 @@
+{
+  "runtime": "iOS 26.2",
+  "captureMethod": "debug launch argument; real native app",
+  "captures": [
+    {
+      "file": "iphone-configure.png",
+      "device": "iPhone 17 Pro Max",
+      "destination": "configure",
+      "launchArguments": [
+        "--grill-route",
+        "configure"
+      ],
+      "readiness": "native route consumed by web bridge; 2s render wait"
+    },
+    {
+      "file": "iphone-temperatures.png",
+      "device": "iPhone 17 Pro Max",
+      "destination": "temperatures",
+      "launchArguments": [
+        "--grill-route",
+        "temperatures"
+      ],
+      "readiness": "native route consumed by web bridge; 2s render wait"
+    },
+    {
+      "file": "ipad-configure.png",
+      "device": "iPad Pro 13-inch (M5)",
+      "destination": "configure",
+      "launchArguments": [
+        "--grill-route",
+        "configure"
+      ],
+      "readiness": "native route consumed by web bridge; 2s render wait"
+    },
+    {
+      "file": "ipad-temperatures.png",
+      "device": "iPad Pro 13-inch (M5)",
+      "destination": "temperatures",
+      "launchArguments": [
+        "--grill-route",
+        "temperatures"
+      ],
+      "readiness": "native route consumed by web bridge; 2s render wait"
+    }
+  ],
+  "limitations": [
+    "Simulator captures; physical device validation remains required.",
+    "Debug launch routing does not validate open-URL prompts, Siri, or Shortcuts.",
+    "Bridge consumption and render wait require visual screen-label verification.",
+    "Active-cook screenshots require real UI automation and are not fabricated."
+  ]
+}
