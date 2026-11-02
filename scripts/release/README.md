@@ -1,10 +1,36 @@
 # Native validation and TestFlight release
 
-These scripts require macOS, Xcode with an installed iOS runtime, Node 20, Python 3, OpenSSL, and CocoaPods (including its `xcodeproj` Ruby gem). CI dynamically selects the newest installed stable Xcode with an iOS device SDK (a beta is used only if no stable installation qualifies); local scripts use your active Xcode. Both build paths record `xcodebuild -version` and installed SDKs. The workflow's `macos-15` runner label does **not** establish compliance with Apple's current SDK upload requirements; check the recorded Xcode/SDK against App Store Connect's requirements before a release.
+These scripts require macOS, Xcode with an installed iOS runtime, Node 20 or newer (automatic release uses Node 24), Python 3, OpenSSL, and CocoaPods (including its `xcodeproj` Ruby gem). CI dynamically selects the newest installed stable Xcode with an iOS device SDK (a beta is used only if no stable installation qualifies); local scripts use your active Xcode. Both build paths record `xcodebuild -version` and installed SDKs. The workflow's `macos-15` runner label does **not** establish compliance with Apple's current SDK upload requirements; check the recorded Xcode/SDK against App Store Connect's requirements before a release.
 
-Unsigned macOS validation succeeded for commit cb52b374bd21963bf390f5917cfa2cb2520bb0cc in GitHub run 41384119053, producing an iPhone/iPad screenshot artifact. Those captures still require visual acceptance. Signed archive/upload and Apple API verification have not been run. Physical-device testing remains a release gate.
+Unsigned macOS validation succeeded for commit cb52b374bd21963bf390f5917cfa2cb2520bb0cc in GitHub run 41384119053, producing an iPhone/iPad screenshot artifact. Those captures still require visual acceptance. Apple API authentication has since succeeded with the four configured secrets. Signed archive/upload is pending the automatic release result. Physical-device testing remains a release gate.
 
-## One-time Apple setup
+## Automatic signing with the four existing secrets
+
+The preferred `Automatic TestFlight release` workflow uses only `ASC_KEY_ID`,
+`ASC_ISSUER_ID`, `ASC_PRIVATE_KEY_P8_BASE64`, and `APPLE_TEAM_ID` from the
+`testflight` GitHub environment. Raw original `.p8` text and Base64 are both accepted;
+the secret's legacy name does not require Base64.
+
+The exact App Store Connect app must exist for `com.dirkbeveridge.grillmaster`.
+Both it and `com.dirkbeveridge.grillmaster.widgets` must have the shared group
+`group.com.dirkbeveridge.grillmaster` associated. The owner reports these portal
+steps complete; API visibility and signed entitlements must independently confirm them.
+
+Unsigned native validation runs first. The release job then checks the app record
+and unused build number before creating a temporary keychain or requesting signing.
+Xcode attempts automatic signing once using the API key. Existing certificate
+metadata does not supply its private key, so four secrets are not a guarantee of
+successful signing. Diagnose any failure before another provisioning attempt;
+never revoke certificates belonging to Blueberry or register devices as a workaround.
+
+The signed archive must contain the correct app and widget, matching versions/builds,
+valid signatures, unexpired embedded profiles, and the intended team and App Group.
+Only then does Xcode upload. Apple build visibility and a read-back of What to Test
+establish completion. No external group, Beta App Review, or public App Store release
+is submitted automatically. Signing material and raw distribution logs are never
+published and are removed from the ephemeral runner at exit.
+
+## Manual signing fallback (only if automatic signing requires it)
 
 1. Create/register the App Store Connect app for `com.dirkbeveridge.grillmaster` and extension identifier `com.dirkbeveridge.grillmaster.widgets` in the same Apple Developer team. Enable the shared App Group `group.com.dirkbeveridge.grillmaster` on both identifiers; generate fresh profiles after capability changes.
 2. Generate two **App Store distribution** provisioning profiles, one per identifier. Development, ad hoc, and enterprise profiles are rejected. Both profiles must include the shared App Group and match the distribution certificate and team.
@@ -35,7 +61,7 @@ npx cap sync ios
 bash scripts/release/validate-ios.sh
 ```
 
-The `iOS native validation` workflow runs on PRs, main pushes, and manual dispatch. It builds `App` from `ios/App/App.xcworkspace` with signing disabled, installs the actual compiled `.app` on fresh iPhone and iPad simulators, and captures `grillmaster://configure` and `grillmaster://temperatures`. It chooses an available iOS runtime/device and records the exact runtime, devices, and routes in `native-screenshots/capture-manifest.json`. PNGs and the manifest are retained for 14 days. Check these images for route correctness and layout; a screenshot file existing alone does not prove the screen's semantics.
+The `iOS native validation` workflow runs on PRs, main pushes, and manual dispatch. It builds `App` from `ios/App/App.xcworkspace` with signing disabled, installs the actual compiled `.app` on fresh iPhone and iPad simulators, and captures the configuration and temperature-guide destinations through the real native bridge using Debug-only launch arguments (`--grill-route`). Release builds exclude that capture hook. The script waits for a fresh bridge-consumption marker and visible screenshot content, rejecting blank launch screens; visual acceptance still remains mandatory. It chooses an available iOS runtime/device and records the exact runtime, devices, and routes in `native-screenshots/capture-manifest.json`. PNGs and the manifest are retained for 14 days. Check these images for route correctness and layout; a screenshot file existing alone does not prove the screen's semantics.
 
 These are native app simulator screenshots, not browser artwork. No cooking state is fabricated. Active-cook/Live Activity screenshots, notification behavior, widget interaction, and real-device checks remain pending genuine UI automation or physical device validation. To only compile locally, set `CAPTURE_SCREENSHOTS=0`. Set `SCREENSHOT_OUTPUT` to move captures outside the checkout.
 

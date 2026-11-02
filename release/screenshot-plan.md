@@ -34,4 +34,12 @@ Capture all five on iPhone and iPad if the store accepts that count. Keep the fi
 
 Save raw images under a release-evidence location chosen by the release owner, grouped by device model. Record each filename’s screen, dimensions, source device/runtime, commit, version/build, and capture time. Keep screenshot artifacts separate from the public `docs/` site unless deliberately reviewed for publication.
 
-**Status: PENDING native capture.** No simulator session or App Store screenshots are claimed as completed by this document.
+**Status: replacement capture in progress.** Native compilation and captures succeeded
+in runs 41384119053 and 41408061553. Visual inspection rejected the first set's
+temperature images because of an OS open-URL dialog. The second set fixed that
+routing issue but its iPad configuration image still shows a blank launch view.
+Neither set is accepted as a complete submission set. The current capture script
+retries actual simulator screenshots until visible app content appears and fails
+if the image remains blank. This guard does not establish screen semantics;
+inspect every replacement image before acceptance. Browser review images remain
+separate from native submission evidence.
