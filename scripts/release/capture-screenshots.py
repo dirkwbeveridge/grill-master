@@ -6,9 +6,40 @@ from pathlib import Path
 import subprocess
 import time
 
+BUNDLE_ID = "com.dirkbeveridge.grillmaster"
+CAPTURE_METHOD = "debug launch argument; real native app"
+READY_RELATIVE_PATH = Path("Library/Caches/GrillMaster/debug-route-ready.json")
+
 
 def run(*args, capture=False):
     return subprocess.run(args, check=True, text=True, capture_output=capture).stdout
+
+
+def launch_state(udid, state, timeout=20):
+    """Wait for the real web bridge to consume the Debug-only native route."""
+    container = Path(run("xcrun", "simctl", "get_app_container", udid,
+                         BUNDLE_ID, "data", capture=True).strip())
+    marker = container / READY_RELATIVE_PATH
+    subprocess.run(["xcrun", "simctl", "terminate", udid, BUNDLE_ID],
+                   check=False, capture_output=True, text=True)
+    # Remove previous-process evidence before launch; a fresh marker is mandatory.
+    marker.unlink(missing_ok=True)
+    arguments = ["--grill-route", state]
+    run("xcrun", "simctl", "launch", udid, BUNDLE_ID, *arguments)
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            readiness = json.loads(marker.read_text())
+        except (FileNotFoundError, json.JSONDecodeError):
+            readiness = {}
+        if (readiness.get("destination") == state
+                and readiness.get("readiness") == "native route consumed by web bridge"):
+            # Consumption proves the handoff, not completed rendering or visible labels.
+            time.sleep(2)
+            return {"destination": state, "launchArguments": arguments,
+                    "readiness": "native route consumed by web bridge; 2s render wait"}
+        time.sleep(0.2)
+    raise RuntimeError(f"Debug route {state!r} was not consumed within {timeout}s")
 
 
 def main():
@@ -24,8 +55,10 @@ def main():
         "iphone": ["iPhone 17 Pro Max", "iPhone 16 Pro Max", "iPhone 16", "iPhone 15 Pro Max"],
         "ipad": ["iPad Pro 13-inch (M5)", "iPad Pro 13-inch (M4)", "iPad Pro (12.9-inch) (6th generation)"],
     }
-    evidence = {"runtime": runtime["name"], "captures": [],
+    evidence = {"runtime": runtime["name"], "captureMethod": CAPTURE_METHOD, "captures": [],
                 "limitations": ["Simulator captures; physical device validation remains required.",
+                                "Debug launch routing does not validate open-URL prompts, Siri, or Shortcuts.",
+                                "Bridge consumption and render wait require visual screen-label verification.",
                                 "Active-cook screenshots require real UI automation and are not fabricated."]}
     for family, names in preferred.items():
         candidates = [t for n in names for t in types if t["name"] == n]
@@ -50,15 +83,11 @@ def main():
             run("xcrun", "simctl", "status_bar", udid, "override", "--time", "9:41",
                 "--batteryState", "charged", "--batteryLevel", "100")
             run("xcrun", "simctl", "install", udid, str(app))
-            run("xcrun", "simctl", "launch", udid, "com.dirkbeveridge.grillmaster")
-            time.sleep(5)
             for state in ("configure", "temperatures"):
-                route = f"grillmaster://{state}"
-                run("xcrun", "simctl", "openurl", udid, route)
-                time.sleep(3)
+                readiness = launch_state(udid, state)
                 filename = f"{family}-{state}.png"
                 run("xcrun", "simctl", "io", udid, "screenshot", str(output / filename))
-                evidence["captures"].append({"file": filename, "device": device["name"], "route": route})
+                evidence["captures"].append({"file": filename, "device": device["name"], **readiness})
         finally:
             subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False)
             subprocess.run(["xcrun", "simctl", "delete", udid], check=False)

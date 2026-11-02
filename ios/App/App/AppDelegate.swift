@@ -12,6 +12,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             GrillMasterShortcuts.updateAppShortcutParameters()
         }
         if let url = launchOptions?[.url] as? URL { _ = GrillRoute.handle(url) }
+        #if DEBUG
+        GrillRoute.queueDebugLaunchRoute()
+        #endif
         return true
     }
 
