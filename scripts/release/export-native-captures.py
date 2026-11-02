@@ -20,8 +20,8 @@ from unittest.mock import patch
 import io
 import zlib
 
-SOURCE_RUN = 41413184587
-SOURCE_SHA = "f31e38c16a9e6c69ad8fb2ed1e21d5904c832091"
+SOURCE_RUN = 41414814002
+SOURCE_SHA = "3fa30624f63067c0273aa9744ebf347ab4aee2a5"
 SOURCE_REPO = "dirkwbeveridge/grill-master"
 CAPTURE_METHOD = "debug launch argument; real native app"
 READINESS = "native route consumed by web bridge; 2s render wait"
@@ -157,7 +157,7 @@ def validate_manifest(content):
     names = set()
     for item in captures:
         require(isinstance(item, dict)
-                and set(item) == {"file", "device", "destination", "launchArguments", "readiness"},
+                and set(item) == {"file", "device", "destination", "launchArguments", "readiness", "launchAttempt"},
                 "Unexpected capture fields")
         name = item["file"]
         require(isinstance(name, str) and name in CAPTURES and name not in names,
@@ -172,6 +172,8 @@ def validate_manifest(content):
                 "Capture launch arguments do not match the expected debug destination")
         require(item["readiness"] == READINESS,
                 "Capture is missing the required native bridge consumption and render-wait readiness")
+        require(type(item["launchAttempt"]) is int and item["launchAttempt"] in (1, 2),
+                "Capture launch attempt must document the bounded relaunch protocol")
         names.add(name)
     require(names == set(CAPTURES), "Capture manifest is incomplete")
     return manifest
@@ -211,20 +213,23 @@ def provenance(manifest, dimensions):
         "- Capture script: `scripts/release/capture-screenshots.py` at the source commit",
         f"- Capture method recorded by the script: {manifest['captureMethod']}",
         f"- Simulator runtime recorded by the capture script: {manifest['runtime']}", "",
-        "| File | Simulator device | Debug destination | Launch arguments | Reported readiness | Native PNG dimensions |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| File | Simulator device | Debug destination | Launch arguments | Reported readiness | Launch attempt | Native PNG dimensions |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
     ]
     for item in manifest["captures"]:
         width, height = dimensions[item["file"]]
         lines.append(f"| [{item['file']}]({item['file']}) | {item['device']} | "
                      f"`{item['destination']}` | `{' '.join(item['launchArguments'])}` | "
-                     f"{item['readiness']} | {width} × {height} |")
+                     f"{item['readiness']} | {item['launchAttempt']} | {width} × {height} |")
     lines += ["", "## Capture protocol", "",
               "The source capture script launches the real Debug app with `--grill-route` and the",
               "requested destination. It removes prior-process readiness evidence, waits for a",
               "fresh destination marker written when the web bridge consumes the native route,",
               "then waits two seconds before taking the simulator PNG. The manifest reports that",
-              "handoff and wait; the exporter validates the report's exact fields and values.", "",
+              "handoff and wait; the exporter validates the report's exact fields and values.",
+              "The capture script rejects blank images and permits one real app relaunch.",
+              "Launch attempt 2 means cold-launch capture failed; blank diagnostics are separate.",
+              "These captures do not establish reliable first launch on a physical device.", "",
               "This Debug-only launch path does not exercise open-URL confirmation dialogs, Siri,",
               "or App Shortcuts. Those integrations require their own native tests. A readiness",
               "marker does not verify rendered screen labels or establish visual acceptance."]
@@ -281,7 +286,7 @@ class ExportTests(unittest.TestCase):
         self.manifest = {"runtime": "iOS 26.2", "captureMethod": CAPTURE_METHOD, "captures": [
             {"file": name, "device": "iPhone 17 Pro Max" if family == "iphone" else "iPad Pro 13-inch (M5)",
              "destination": destination, "launchArguments": ["--grill-route", destination],
-             "readiness": READINESS}
+             "readiness": READINESS, "launchAttempt": 1}
             for name, (family, destination) in CAPTURES.items()], "limitations": LIMITATIONS.copy()}
         self.write_manifest()
 
@@ -422,8 +427,16 @@ class ExportTests(unittest.TestCase):
             with self.subTest(method=method), self.assertRaises(InvalidCapture):
                 validate_manifest(json.dumps(manifest).encode())
 
+    def test_rejects_invalid_launch_attempts(self):
+        for value in (0, 3, True, "1", None):
+            with self.subTest(value=value):
+                self.manifest["captures"][0]["launchAttempt"] = value
+                self.write_manifest()
+                with self.assertRaises(InvalidCapture):
+                    validate_source(self.source)
+
     def test_requires_each_readiness_protocol_field(self):
-        for field in ("destination", "launchArguments", "readiness"):
+        for field in ("destination", "launchArguments", "readiness", "launchAttempt"):
             manifest = json.loads(json.dumps(self.manifest))
             manifest["captures"][0].pop(field)
             with self.subTest(field=field), self.assertRaises(InvalidCapture):
