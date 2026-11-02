@@ -16,8 +16,8 @@ SPEC = importlib.util.spec_from_file_location("identifier_inventory", Path(__fil
 inventory = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(inventory)
 
-TARGETS = (("Main app", "com.dirkbeveridge.grillmaster", "Grill Master"),
-           ("Widget extension", "com.dirkbeveridge.grillmaster.widgets", "Grill Master Widgets"))
+TARGETS = (("Main app", "com.dirkwbeveridge.grillmaster", "Grill Master"),
+           ("Widget extension", "com.dirkwbeveridge.grillmaster.widgets", "Grill Master Widgets"))
 
 
 class ProvisionError(Exception):

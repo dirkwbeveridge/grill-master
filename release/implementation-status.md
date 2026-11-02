@@ -35,7 +35,7 @@ The installed app keeps the short name Grill Master. Requested paid download:
   `codex/native-screenshots-v3`. Visual acceptance is still required.
 - The owner reports the shared App Group and new App Store Connect app complete.
   Fresh inventory run 41412398469 still cannot see an app matching
-  `com.dirkbeveridge.grillmaster`. Bundle ID/Apple ID confirmation is pending.
+  `com.dirkwbeveridge.grillmaster`. Bundle ID/Apple ID confirmation is pending.
   API authentication and both registered identifiers are confirmed; App Group
   membership is not yet independently established.
 - Automatic signing uses the four existing secrets. It checks a signed archive's
