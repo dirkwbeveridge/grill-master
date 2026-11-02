@@ -246,7 +246,7 @@ def inspect(report):
                 continue
             bundle_id = exact[0]["id"]
             bundle_ids[label] = bundle_id
-            capabilities, _ = all_pages(f"/bundleIds/{bundle_id}/bundleIdCapabilities", {"limit": "200"})
+            capabilities, _ = all_pages(f"/bundleIds/{bundle_id}/bundleIdCapabilities")
             enabled = any(item.get("attributes", {}).get("capabilityType") == "APP_GROUPS" for item in capabilities)
             report.row(f"{label} App Groups capability", "Enabled; group membership unverified" if enabled else "Missing")
             if not enabled:

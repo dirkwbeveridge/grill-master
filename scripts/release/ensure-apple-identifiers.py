@@ -135,7 +135,7 @@ def ensure_bundle(label, identifier, name, report):
 
 
 def has_app_groups(bundle_id):
-    entries = list_resources(f"/bundleIds/{bundle_id}/bundleIdCapabilities", {"limit": "200"})
+    entries = list_resources(f"/bundleIds/{bundle_id}/bundleIdCapabilities")
     matches = [entry for entry in entries if entry.get("attributes", {}).get("capabilityType") == "APP_GROUPS"]
     if len(matches) > 1:
         raise ProvisionError("readback_failed")
