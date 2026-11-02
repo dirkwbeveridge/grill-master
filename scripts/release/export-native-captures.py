@@ -20,8 +20,8 @@ from unittest.mock import patch
 import io
 import zlib
 
-SOURCE_RUN = 41408061553
-SOURCE_SHA = "100927fa9defd395bdded5174d7440de659c5b1d"
+SOURCE_RUN = 41413184587
+SOURCE_SHA = "f31e38c16a9e6c69ad8fb2ed1e21d5904c832091"
 SOURCE_REPO = "dirkwbeveridge/grill-master"
 CAPTURE_METHOD = "debug launch argument; real native app"
 READINESS = "native route consumed by web bridge; 2s render wait"
