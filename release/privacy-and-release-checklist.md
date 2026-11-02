@@ -7,7 +7,7 @@ This checklist separates prepared repository material from account answers and n
 - [x] Static home, support, and privacy pages are prepared in `docs/` with local CSS and no third-party resources loaded by the pages.
 - [x] Support points to the actual repository: https://github.com/dirkwbeveridge/grill-master/issues.
 - [x] A GitHub Actions Pages workflow publishes only `docs/`, on changes to `main` or manual workflow dispatch. It does not publish the application bundle or sell the app.
-- [ ] Confirm the app removes Google Fonts and any other externally loaded runtime assets before adopting the no-external-font privacy description. Reconcile all URL/fetch/plugin/SDK behavior in the final binary.
+- [x] Source review confirms external fonts were removed. See [privacy source inventory](privacy-source-inventory.md); final binary and native traffic verification remain pending.
 - [ ] Confirm timer/queue persistence matches the policy’s local session-storage description.
 - [ ] Enable repository Pages with **GitHub Actions** as the source. Confirm the `github-pages` environment permits the intended deployment branch and the account/repository plan supports Pages.
 - [ ] Complete an authorized deployment; verify all three public pages and the local stylesheet return successfully over HTTPS at the intended subpath.
