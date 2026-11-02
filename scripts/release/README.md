@@ -16,12 +16,14 @@ Unsigned macOS validation succeeded for commit cb52b374bd21963bf390f5917cfa2cb25
 | --- | --- |
 | `ASC_KEY_ID` | App Store Connect API Key ID |
 | `ASC_ISSUER_ID` | App Store Connect API Issuer ID |
-| `ASC_PRIVATE_KEY_P8_BASE64` | Single-line base64 of the API `.p8` file |
+| `ASC_PRIVATE_KEY_P8_BASE64` | Full original API `.p8` text, including BEGIN/END lines, or Base64-encoded file contents |
 | `APPLE_TEAM_ID` | Apple Developer Team ID |
 | `IOS_DISTRIBUTION_P12_BASE64` | Single-line base64 of the distribution certificate/private-key `.p12` |
 | `IOS_DISTRIBUTION_P12_PASSWORD` | Password used when exporting that `.p12` |
 | `IOS_APP_PROFILE_BASE64` | Single-line base64 of the main app's `.mobileprovision` |
 | `IOS_WIDGET_PROFILE_BASE64` | Single-line base64 of the widget extension's `.mobileprovision` |
+
+For the API key, you can open the downloaded `.p8` file as text, copy its entire contents including the BEGIN/END lines, and paste directly into the GitHub secret named `ASC_PRIVATE_KEY_P8_BASE64`. That existing secret name is retained for compatibility; raw PEM and Base64 are both supported. Paste file data, never a shell command.
 
 For example, from macOS, `base64 -i /private/path/AuthKey.p8 | tr -d '\n' | gh secret set ASC_PRIVATE_KEY_P8_BASE64 --env testflight` sends the encoded key through stdin without printing it. Run from the correct repository. Use the same pattern for profiles and the `.p12`; delete temporary secret files securely according to your normal key-management process. Base64 is encoding, not encryption.
 

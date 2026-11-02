@@ -3,6 +3,8 @@
 
 Run without arguments. Requires ASC_KEY_ID, ASC_ISSUER_ID,
 ASC_PRIVATE_KEY_P8_BASE64, APPLE_TEAM_ID and RUNNER_TEMP (outside checkout).
+The private-key input accepts raw unencrypted PKCS#8 PEM or Base64 with
+ASCII space, tab, CR and LF wrapping; pasted commands are never executed.
 Optional GITHUB_STEP_SUMMARY receives the same sanitized report as stdout.
 Exit 0: queried prerequisites present; 1: credentials/access/request failure;
 2: missing prerequisites or incomplete inventory. Read access never proves write access.
@@ -17,6 +19,8 @@ import re
 import subprocess
 import tempfile
 import urllib.parse
+
+from apple_key import KeyInputError, decode_private_key as decode_key_data
 
 SPEC = importlib.util.spec_from_file_location("apple_inventory_asc", Path(__file__).with_name("app-store-connect.py"))
 asc = importlib.util.module_from_spec(SPEC)
@@ -106,26 +110,10 @@ def validate_key(path):
 
 
 def decode_private_key(value):
-    """Accept PEM or copy-wrapped Base64 as data; never interpret shell syntax."""
-    text = value.strip(" \t\r\n")
-    if re.match(r"(?:\$[ \t]*)?(?:/[^ \t\r\n]*/)?(?:base64|openssl|cat|echo|printf|pbpaste|gh)(?:[ \t\r\n]|$)", text):
-        raise InventoryError("command_input")
-    if text.startswith("-----BEGIN "):
-        try:
-            key = text.encode("ascii")
-        except UnicodeEncodeError:
-            raise InventoryError("key_parse_failed") from None
-    else:
-        compact = re.sub(r"[ \t\r\n]", "", text)
-        try:
-            key = base64.b64decode(compact, validate=True)
-        except ValueError:
-            raise InventoryError("invalid_base64") from None
-    if key.startswith(b"-----BEGIN ENCRYPTED PRIVATE KEY-----"):
-        raise InventoryError("key_parse_failed")
-    if not key.startswith(b"-----BEGIN PRIVATE KEY-----"):
-        raise InventoryError("missing_pem_header")
-    return key
+    try:
+        return decode_key_data(value)
+    except KeyInputError as error:
+        raise InventoryError(error.kind) from None
 
 
 @contextmanager

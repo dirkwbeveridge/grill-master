@@ -9,13 +9,17 @@ import plistlib
 import subprocess
 import sys
 
+from apple_key import decode_private_key
+
 BUNDLES = {"IOS_APP_PROFILE_BASE64": "com.dirkbeveridge.grillmaster",
            "IOS_WIDGET_PROFILE_BASE64": "com.dirkbeveridge.grillmaster.widgets"}
 GROUP = "group.com.dirkbeveridge.grillmaster"
 
 
 def decode_secret(name, path):
-    path.write_bytes(base64.b64decode(os.environ[name], validate=True))
+    value = os.environ[name]
+    payload = decode_private_key(value) if name == "ASC_PRIVATE_KEY_P8_BASE64" else base64.b64decode(value, validate=True)
+    path.write_bytes(payload)
     path.chmod(0o600)
 
 
