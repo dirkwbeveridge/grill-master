@@ -2,7 +2,7 @@
 
 These scripts require macOS, Xcode with an installed iOS runtime, Node 20, Python 3, OpenSSL, and CocoaPods (including its `xcodeproj` Ruby gem). CI dynamically selects the newest installed stable Xcode with an iOS device SDK (a beta is used only if no stable installation qualifies); local scripts use your active Xcode. Both build paths record `xcodebuild -version` and installed SDKs. The workflow's `macos-15` runner label does **not** establish compliance with Apple's current SDK upload requirements; check the recorded Xcode/SDK against App Store Connect's requirements before a release.
 
-The checked-in release pipeline has not been run on macOS or against Apple from this Linux workspace. Shell/Python syntax and mocked API/cryptographic checks can run here. A successful GitHub run and physical-device testing remain release gates.
+Unsigned macOS validation succeeded for commit cb52b374bd21963bf390f5917cfa2cb2520bb0cc in GitHub run 41384119053, producing an iPhone/iPad screenshot artifact. Those captures still require visual acceptance. Signed archive/upload and Apple API verification have not been run. Physical-device testing remains a release gate.
 
 ## One-time Apple setup
 

@@ -44,7 +44,7 @@ Use `npm run test:webkit` after installing WebKit. The default test run excludes
 
 The Xcode workspace is `ios/App/App.xcworkspace`, shared scheme `App`. Native sources include three App Shortcuts (configure cook, open active cook, open temperature guide), a current-cook widget, and a Live Activity/Dynamic Island presentation. A Capacitor bridge shares a small current-cook snapshot with the extension. The custom URLs are `grillmaster://configure`, `grillmaster://active`, and `grillmaster://temperatures`.
 
-The app deployment target is iOS 13; App Intents are gated to iOS 16, and the widget/Live Activity extension requires iOS 16.2. Native integration source and project structure were reviewed on Linux; Apple SDK compilation and device behavior require the macOS validation workflow. A Live Activity displays the current stage deadline and marks an overdue snapshot stale; it does not silently advance cooking stages in the background.
+The app deployment target is iOS 13; App Intents are gated to iOS 16, and the widget/Live Activity extension requires iOS 16.2. Native integration source and project structure were reviewed on Linux; unsigned Apple SDK compilation and simulator capture succeeded in the macOS validation workflow. Device behavior and signed release validation remain pending. A Live Activity displays the current stage deadline and marks an overdue snapshot stale; it does not silently advance cooking stages in the background.
 
 On a Mac with Xcode and CocoaPods:
 
