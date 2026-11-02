@@ -1,0 +1,29 @@
+{
+  "runtime": "iOS 26.2",
+  "captures": [
+    {
+      "file": "iphone-configure.png",
+      "device": "iPhone 17 Pro Max",
+      "route": "grillmaster://configure"
+    },
+    {
+      "file": "iphone-temperatures.png",
+      "device": "iPhone 17 Pro Max",
+      "route": "grillmaster://temperatures"
+    },
+    {
+      "file": "ipad-configure.png",
+      "device": "iPad Pro 13-inch (M5)",
+      "route": "grillmaster://configure"
+    },
+    {
+      "file": "ipad-temperatures.png",
+      "device": "iPad Pro 13-inch (M5)",
+      "route": "grillmaster://temperatures"
+    }
+  ],
+  "limitations": [
+    "Simulator captures; physical device validation remains required.",
+    "Active-cook screenshots require real UI automation and are not fabricated."
+  ]
+}
