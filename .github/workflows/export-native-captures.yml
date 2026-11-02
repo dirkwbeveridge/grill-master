@@ -43,7 +43,7 @@ jobs:
               const response = await github.rest.actions.getWorkflowRun({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                run_id: 41384119053,
+                run_id: 41408061553,
               });
               run = response.data;
             } catch {
@@ -55,7 +55,7 @@ jobs:
               ['workflow repository', `${context.repo.owner}/${context.repo.repo}` === expectedRepository],
               ['source repository', run.repository?.full_name === expectedRepository],
               ['source head repository', run.head_repository?.full_name === expectedRepository],
-              ['source commit', run.head_sha === 'cb52b374bd21963bf390f5917cfa2cb2520bb0cc'],
+              ['source commit', run.head_sha === '100927fa9defd395bdded5174d7440de659c5b1d'],
               ['source completion', run.status === 'completed'],
               ['source success', run.conclusion === 'success'],
               ['source workflow path', run.path?.split('@')[0] === '.github/workflows/ios-validate.yml'],
@@ -73,7 +73,7 @@ jobs:
           set -Eeuo pipefail
           stage='output branch preflight'
           trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
-          if git ls-remote --exit-code --heads origin refs/heads/codex/native-screenshots; then
+          if git ls-remote --exit-code --heads origin refs/heads/codex/native-screenshots-v2; then
             echo '::error title=Native capture export::Output branch already exists; refusing to modify it.' >&2
             exit 1
           else
@@ -89,7 +89,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: native-ios-screenshots
-          run-id: 41384119053
+          run-id: 41408061553
           repository: ${{ github.repository }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/native-capture-input
@@ -132,7 +132,7 @@ jobs:
           set -Eeuo pipefail
           stage='creating output branch'
           trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
-          git switch --create codex/native-screenshots
+          git switch --create codex/native-screenshots-v2
           stage='staging native evidence'
           # These allowlisted captures are intentional release evidence, even
           # though the general generated-screenshot directory is ignored.
@@ -159,7 +159,7 @@ jobs:
             commit -m 'Preserve native iPhone and iPad simulator captures'
           echo '::notice title=Native capture export::Commit passed: only the six expected native evidence files were committed on the new output branch.'
           stage='checking output branch before push'
-          if git ls-remote --exit-code --heads origin refs/heads/codex/native-screenshots; then
+          if git ls-remote --exit-code --heads origin refs/heads/codex/native-screenshots-v2; then
             echo '::error title=Native capture export::Output branch appeared during export; refusing to modify it.' >&2
             exit 1
           else
@@ -170,16 +170,17 @@ jobs:
             fi
           fi
           stage='pushing native evidence'
-          git push origin HEAD:refs/heads/codex/native-screenshots
+          git push origin HEAD:refs/heads/codex/native-screenshots-v2
           echo '::notice title=Native capture export::Push passed: new native screenshot branch published without force.'
           stage='writing run summary'
           {
             echo '## Native simulator evidence exported'
             echo
-            echo 'Output branch: `codex/native-screenshots` (main was not changed).'
+            echo 'Output branch: `codex/native-screenshots-v2` (main was not changed).'
             echo 'Files: four native PNGs, capture-manifest.json, and provenance README.'
-            echo 'Source run: https://github.com/dirkwbeveridge/grill-master/actions/runs/41384119053'
-            echo 'Source commit: `cb52b374bd21963bf390f5917cfa2cb2520bb0cc`.'
+            echo 'Source run: https://github.com/dirkwbeveridge/grill-master/actions/runs/41408061553'
+            echo 'Source commit: `100927fa9defd395bdded5174d7440de659c5b1d`.'
             echo
-            echo 'Open all four images for visual acceptance before using them in App Store review.'
+            echo 'New Debug launch/readiness protocol required; legacy open-URL captures are rejected.'
+            echo 'Open all four images for visual acceptance; readiness does not establish rendered labels or Siri/Shortcuts behavior.'
           } >> "$GITHUB_STEP_SUMMARY"

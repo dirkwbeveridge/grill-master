@@ -20,17 +20,21 @@ from unittest.mock import patch
 import io
 import zlib
 
-SOURCE_RUN = 41384119053
-SOURCE_SHA = "cb52b374bd21963bf390f5917cfa2cb2520bb0cc"
+SOURCE_RUN = 41408061553
+SOURCE_SHA = "100927fa9defd395bdded5174d7440de659c5b1d"
 SOURCE_REPO = "dirkwbeveridge/grill-master"
+CAPTURE_METHOD = "debug launch argument; real native app"
+READINESS = "native route consumed by web bridge; 2s render wait"
 CAPTURES = {
-    f"{family}-{state}.png": (family, f"grillmaster://{state}")
+    f"{family}-{state}.png": (family, state)
     for family in ("iphone", "ipad")
     for state in ("configure", "temperatures")
 }
 ALLOWLIST = frozenset((*CAPTURES, "capture-manifest.json"))
 LIMITATIONS = [
     "Simulator captures; physical device validation remains required.",
+    "Debug launch routing does not validate open-URL prompts, Siri, or Shortcuts.",
+    "Bridge consumption and render wait require visual screen-label verification.",
     "Active-cook screenshots require real UI automation and are not fabricated.",
 ]
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
@@ -136,8 +140,11 @@ def validate_manifest(content):
         manifest = json.loads(content.decode("utf-8"), object_pairs_hook=unique_object)
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise InvalidCapture("Capture manifest must be valid UTF-8 JSON") from exc
-    require(isinstance(manifest, dict) and set(manifest) == {"runtime", "captures", "limitations"},
+    require(isinstance(manifest, dict)
+            and set(manifest) == {"runtime", "captureMethod", "captures", "limitations"},
             "Unexpected manifest fields")
+    require(manifest["captureMethod"] == CAPTURE_METHOD,
+            "Capture method does not match the debug native launch protocol")
     runtime = manifest["runtime"]
     require(isinstance(runtime, str) and runtime.startswith("iOS ") and len(runtime) <= 40,
             "Missing iOS runtime")
@@ -149,17 +156,22 @@ def validate_manifest(content):
     require(isinstance(captures, list) and len(captures) == len(CAPTURES), "Expected four captures")
     names = set()
     for item in captures:
-        require(isinstance(item, dict) and set(item) == {"file", "device", "route"},
+        require(isinstance(item, dict)
+                and set(item) == {"file", "device", "destination", "launchArguments", "readiness"},
                 "Unexpected capture fields")
         name = item["file"]
         require(isinstance(name, str) and name in CAPTURES and name not in names,
                 "Unexpected or duplicate capture filename")
-        family, route = CAPTURES[name]
+        family, destination = CAPTURES[name]
         device = item["device"]
         prefix = "iPhone " if family == "iphone" else "iPad "
         require(isinstance(device, str) and device.startswith(prefix) and len(device) <= 120
                 and device.isprintable(), "Missing or mismatched simulator device")
-        require(item["route"] == route, "Capture route does not match its filename")
+        require(item["destination"] == destination, "Capture destination does not match its filename")
+        require(item["launchArguments"] == ["--grill-route", destination],
+                "Capture launch arguments do not match the expected debug destination")
+        require(item["readiness"] == READINESS,
+                "Capture is missing the required native bridge consumption and render-wait readiness")
         names.add(name)
     require(names == set(CAPTURES), "Capture manifest is incomplete")
     return manifest
@@ -197,19 +209,30 @@ def provenance(manifest, dimensions):
         f"- Source workflow run: https://github.com/{SOURCE_REPO}/actions/runs/{SOURCE_RUN}",
         "- Source artifact: `native-ios-screenshots`",
         "- Capture script: `scripts/release/capture-screenshots.py` at the source commit",
+        f"- Capture method recorded by the script: {manifest['captureMethod']}",
         f"- Simulator runtime recorded by the capture script: {manifest['runtime']}", "",
-        "| File | Simulator device | Route | Native PNG dimensions |",
-        "| --- | --- | --- | --- |",
+        "| File | Simulator device | Debug destination | Launch arguments | Reported readiness | Native PNG dimensions |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
     for item in manifest["captures"]:
         width, height = dimensions[item["file"]]
         lines.append(f"| [{item['file']}]({item['file']}) | {item['device']} | "
-                     f"`{item['route']}` | {width} × {height} |")
+                     f"`{item['destination']}` | `{' '.join(item['launchArguments'])}` | "
+                     f"{item['readiness']} | {width} × {height} |")
+    lines += ["", "## Capture protocol", "",
+              "The source capture script launches the real Debug app with `--grill-route` and the",
+              "requested destination. It removes prior-process readiness evidence, waits for a",
+              "fresh destination marker written when the web bridge consumes the native route,",
+              "then waits two seconds before taking the simulator PNG. The manifest reports that",
+              "handoff and wait; the exporter validates the report's exact fields and values.", "",
+              "This Debug-only launch path does not exercise open-URL confirmation dialogs, Siri,",
+              "or App Shortcuts. Those integrations require their own native tests. A readiness",
+              "marker does not verify rendered screen labels or establish visual acceptance."]
     lines += ["", "## Acceptance still required", "",
               "The manifest and PNG structure have been validated. A human must still open every",
               "image and accept the actual screen, route, layout, safe areas, readable text, and",
               "device dimensions. Export does not establish App Store screenshot acceptance or",
-              "native UI correctness. These captures show configure and temperature routes only;",
+              "native UI correctness. These captures target configure and temperature screens only;",
               "they do not prove active-timer, queue, log, or locked-screen behavior.", "",
               *[f"- {limitation}" for limitation in manifest["limitations"]], "",
               "No signed archive, build log, signing material, or Apple credentials are included.", ""]
@@ -219,7 +242,7 @@ def provenance(manifest, dimensions):
 def export(source, output, milestone=None):
     files, manifest, dimensions = validate_source(source)
     if milestone:
-        milestone("Validator passed: allowlist, manifest, and all four PNG structures match.")
+        milestone("Validator passed: allowlist, debug launch/readiness manifest, and all four PNG structures match.")
     output = Path(os.path.abspath(output))
     reject_symlink_ancestors(output)
     require(not output.exists(), "Output already exists; refusing to overwrite release evidence")
@@ -255,9 +278,11 @@ class ExportTests(unittest.TestCase):
         self.png += chunk(b"IDAT", zlib.compress(b"\0\0\0\0")) + chunk(b"IEND", b"")
         for name in CAPTURES:
             (self.source / name).write_bytes(self.png)
-        self.manifest = {"runtime": "iOS 26.2", "captures": [
+        self.manifest = {"runtime": "iOS 26.2", "captureMethod": CAPTURE_METHOD, "captures": [
             {"file": name, "device": "iPhone 17 Pro Max" if family == "iphone" else "iPad Pro 13-inch (M5)",
-             "route": route} for name, (family, route) in CAPTURES.items()], "limitations": LIMITATIONS}
+             "destination": destination, "launchArguments": ["--grill-route", destination],
+             "readiness": READINESS}
+            for name, (family, destination) in CAPTURES.items()], "limitations": LIMITATIONS.copy()}
         self.write_manifest()
 
     def write_manifest(self):
@@ -376,6 +401,76 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(len(milestones), 2)
         self.assertTrue(milestones[0].startswith("Validator passed:"))
         self.assertTrue(milestones[1].startswith("Export passed:"))
+
+    def test_rejects_legacy_openurl_manifest_without_exporting(self):
+        self.manifest.pop("captureMethod")
+        self.manifest["captures"] = [
+            {"file": name, "device": "iPhone 17 Pro Max" if family == "iphone" else "iPad Pro 13-inch (M5)",
+             "route": f"grillmaster://{destination}"}
+            for name, (family, destination) in CAPTURES.items()
+        ]
+        self.manifest["limitations"] = [LIMITATIONS[0], LIMITATIONS[-1]]
+        self.write_manifest()
+        target = self.root / "output"
+        with self.assertRaises(InvalidCapture):
+            export(self.source, target)
+        self.assertFalse(target.exists())
+
+    def test_requires_exact_new_native_capture_method(self):
+        for method in (None, False, "simctl openurl", "browser", "debug launch argument"):
+            manifest = {**self.manifest, "captureMethod": method}
+            with self.subTest(method=method), self.assertRaises(InvalidCapture):
+                validate_manifest(json.dumps(manifest).encode())
+
+    def test_requires_each_readiness_protocol_field(self):
+        for field in ("destination", "launchArguments", "readiness"):
+            manifest = json.loads(json.dumps(self.manifest))
+            manifest["captures"][0].pop(field)
+            with self.subTest(field=field), self.assertRaises(InvalidCapture):
+                validate_manifest(json.dumps(manifest).encode())
+
+    def test_rejects_wrong_destination_arguments_or_unconfirmed_readiness(self):
+        invalid_values = (
+            ("destination", "temperatures"),
+            ("destination", "log"),
+            ("launchArguments", ["--grill-route", "temperatures"]),
+            ("launchArguments", ["--grill-route"]),
+            ("launchArguments", ["--grill-route", "configure", "--extra"]),
+            ("launchArguments", ["--open-url", "grillmaster://configure"]),
+            ("launchArguments", "--grill-route configure"),
+            ("readiness", None),
+            ("readiness", False),
+            ("readiness", "native route consumed by web bridge"),
+            ("readiness", "visually verified"),
+        )
+        for field, value in invalid_values:
+            manifest = json.loads(json.dumps(self.manifest))
+            manifest["captures"][0][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(InvalidCapture):
+                validate_manifest(json.dumps(manifest).encode())
+
+    def test_rejects_legacy_route_field_even_with_new_readiness(self):
+        self.manifest["captures"][0]["route"] = "grillmaster://configure"
+        with self.assertRaises(InvalidCapture):
+            validate_manifest(json.dumps(self.manifest).encode())
+
+    def test_requires_capture_protocol_limitations(self):
+        for limitations in ([LIMITATIONS[0], LIMITATIONS[-1]], LIMITATIONS[:-1],
+                            LIMITATIONS + ["All screens approved"]):
+            manifest = {**self.manifest, "limitations": limitations}
+            with self.subTest(limitations=limitations), self.assertRaises(InvalidCapture):
+                validate_manifest(json.dumps(manifest).encode())
+
+    def test_provenance_distinguishes_debug_readiness_from_integration_or_visual_acceptance(self):
+        report = provenance(self.manifest, dict.fromkeys(CAPTURES, (1, 1)))
+        self.assertIn(CAPTURE_METHOD, report)
+        self.assertIn(READINESS, report)
+        self.assertIn("--grill-route configure", report)
+        self.assertIn("--grill-route temperatures", report)
+        self.assertIn("marker does not verify rendered screen labels or establish visual acceptance.", report)
+        self.assertIn("Debug-only launch path does not exercise open-URL confirmation dialogs, Siri,", report)
+        self.assertNotIn("grillmaster://", report)
+        self.assertNotIn("| Route |", report)
 
 
 def main():
