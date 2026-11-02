@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+import tempfile
 
 BUNDLE_ID = "com.dirkbeveridge.grillmaster"
 CAPTURE_METHOD = "debug launch argument; real native app"
@@ -42,10 +43,30 @@ def launch_state(udid, state, timeout=20):
     raise RuntimeError(f"Debug route {state!r} was not consumed within {timeout}s")
 
 
+def capture_visible_content(udid, destination, checker, timeout=60):
+    """Retry actual simulator captures while the system still shows a blank launch view."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        run("xcrun", "simctl", "io", udid, "screenshot", str(destination))
+        result = subprocess.run([str(checker), str(destination)], check=False)
+        if result.returncode == 0:
+            return
+        if result.returncode != 1:
+            raise RuntimeError("Unable to inspect native screenshot content")
+        destination.unlink(missing_ok=True)
+        time.sleep(2)
+    raise RuntimeError("Native screenshot remained blank; refusing to publish it")
+
+
 def main():
     app = Path(os.environ["APP_PATH"]).resolve()
     output = Path(os.environ.get("SCREENSHOT_OUTPUT", "native-screenshots")).resolve()
     output.mkdir(parents=True, exist_ok=True)
+    # Compile once on the macOS runner; no third-party image dependency is needed.
+    temporary = tempfile.TemporaryDirectory(prefix="grill-capture-")
+    checker = Path(temporary.name) / "check-capture-content"
+    run("xcrun", "swiftc", str(Path(__file__).with_name("check-capture-content.swift")),
+        "-o", str(checker))
     catalog = json.loads(run("xcrun", "simctl", "list", "--json", capture=True))
     runtimes = [r for r in catalog["runtimes"] if r.get("isAvailable")
                 and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntime.iOS-")]
@@ -86,7 +107,7 @@ def main():
             for state in ("configure", "temperatures"):
                 readiness = launch_state(udid, state)
                 filename = f"{family}-{state}.png"
-                run("xcrun", "simctl", "io", udid, "screenshot", str(output / filename))
+                capture_visible_content(udid, output / filename, checker)
                 evidence["captures"].append({"file": filename, "device": device["name"], **readiness})
         finally:
             subprocess.run(["xcrun", "simctl", "shutdown", udid], check=False)
