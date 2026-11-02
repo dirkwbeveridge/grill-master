@@ -1,0 +1,32 @@
+name: iOS native validation
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main, codex/app-store-readiness]
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest installed stable Xcode with an iOS SDK
+        run: python3 scripts/release/select-xcode.py >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Sync Capacitor and install pods
+        run: npx cap sync ios
+      - name: Build unsigned app and capture native iPhone and iPad screens
+        run: bash scripts/release/validate-ios.sh
+      - name: Save native simulator evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-ios-screenshots
+          path: native-screenshots/
+          if-no-files-found: error
+          retention-days: 14

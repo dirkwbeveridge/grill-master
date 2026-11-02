@@ -1,338 +1,71 @@
 # Grill Master
 
-**Science-backed grilling timer. Perfect times for any meat, cut, and doneness level.**
+A grilling timer and cook log with a Capacitor iOS app. Choose a cut, review an estimated cook plan, follow sear/finish/rest stages, and keep the cooks worth repeating.
 
-> Beautiful, intuitive grilling companion. No hardware required — just your phone and this app.
-
-## Features
-
-✨ **Smart Time Calculations** — Accounts for protein type, cut thickness, grill heat, and doneness level. Includes environmental adjustments for cold weather and high altitude grilling.
-
-⏱️ **Sequential Timer** — Four-stage cook with audio alerts: Sear Side A → Flip to Side B → Indirect Heat → Rest. Each stage is clearly labeled with instructions.
-
-🌡️ **Meat Thermometer 101** — Educational guide with USDA safe temps, visual doneness cues ("feels like your cheek"), and professional tips.
-
-💾 **Save Your Favorites** — Name a perfect cook (e.g., "Dad's Ribeye") and load it one-tap for repeatable results.
-
-❄️ **Environmental Adjustments** — Winter Mode (+15%) and High Altitude Mode (+25%) adjust times for extreme conditions.
-
-🔊 **Audio Alerts** — Alarm sounds when each stage completes. Works in the background on iOS/Android via Capacitor wrapper.
-
-📱 **No Setup Required** — Works immediately in any modern browser. Pure HTML/CSS/JavaScript.
-
----
-
-## Supported Meats
-
-| Protein | Cuts | Doneness Levels |
-|---------|------|-----------------|
-| **Beef** | Ribeye, Filet Mignon, NY Strip, Sirloin, T-Bone, Porterhouse, Hanger Steak, Flank Steak | Rare, Med-Rare, Medium, Well Done |
-| **Pork** | Pork Chop, Tenderloin, Bacon Steak, Spare Ribs | Medium, Well Done |
-| **Poultry** | Chicken Breast, Chicken Thigh, Turkey Breast | 165°F Safe |
-| **Lamb** | Lamb Chops, Lamb Loin, Lamb Leg | Med-Rare, Medium |
-| **Fish** | Salmon Fillet, Tuna Steak, Swordfish, Halibut | Medium, Well Done |
-
----
-
-## Getting Started
-
-### Browser (Instant)
-1. Download or clone this repo
-2. Open `grill-master.html` directly in any modern browser
-3. Start cooking!
-
-**No server. No build step. No dependencies beyond fonts (Google Fonts CDN).**
-
-### Native App (iOS/Android)
-
-To deploy as a native app with background audio and haptic feedback:
-
-1. **Install Capacitor**:
-   ```bash
-   npm init -y
-   npm install @capacitor/core @capacitor/cli
-   ```
-
-2. **Create Capacitor project**:
-   ```bash
-   npx cap init grill-master com.example.grillmaster
-   ```
-
-3. **Copy the app**:
-   ```bash
-   mkdir -p www
-   cp grill-master.html www/index.html
-   ```
-
-4. **Add iOS/Android platforms**:
-   ```bash
-   npm install @capacitor/ios @capacitor/android
-   npx cap add ios
-   npx cap add android
-   ```
-
-5. **Install Haptics & Local Notifications plugins** (optional but recommended):
-   ```bash
-   npm install @capacitor/haptics @capacitor/local-notifications
-   npx cap sync
-   ```
-
-6. **Open in Xcode or Android Studio**:
-   ```bash
-   npx cap open ios    # Build & run on iOS
-   npx cap open android # Build & run on Android
-   ```
-
-7. **Build for App Store/Play Store** following Apple/Google submission guidelines.
-
-**Capacitor handles:**
-- Background audio when screen is locked
-- Haptic feedback (vibration) on timer alerts
-- Local notifications
-- Cross-platform from single HTML codebase
-
----
-
-## How It Works
-
-### The Algorithm
-
-Base cooking time for a 1" medium-rare ribeye on high heat: **7.5 minutes**
-
-Adjusted by:
-- **Thickness factor** — scales linearly with thickness (0.5" to 2.5")
-- **Doneness factor** — Rare (0.75x) to Well Done (1.6x)
-- **Cut factor** — each cut has a unique heat penetration rate
-- **Heat factor** — Medium (1.0x) or High (1.1x)
-- **Environment** — Cold weather (+15%), High altitude (+25%)
-
-**Example:** 1.5" Flank Steak, Medium, High Heat, Cold Weather
-```
-7.5 min × 1.5 (thickness) × 0.80 (flank factor) × 1.25 (medium factor) 
-÷ 1.1 (high heat) × 1.15 (cold weather) = ~12 minutes total
-```
-
-Times are split:
-- **Side A**: 35% direct heat (sear)
-- **Side B**: 35% direct heat (sear other side)
-- **Indirect Heat**: Remaining time at lower temp to reach target temp
-- **Rest**: 5x thickness in minutes, minimum 3 min
-
-### Architecture
-
-**Single-file HTML app** — no build step, no npm dependencies for the app itself.
-
-```
-grill-master.html
-├── HTML (semantic structure)
-├── CSS (design tokens, animations, responsive layout)
-└── JavaScript (state management, timers, audio, UI)
-```
-
-**In-memory state** — no localStorage (works in sandboxed environments). Favorites persist in browser localStorage for each user/browser profile.
-
-**Web Audio API** — plays alarm via oscillator (no audio files to load).
-
-**Responsive** — optimized for 375px phones to 1280px+ desktop.
-
----
-
-## Usage
-
-1. **Select Protein** — Beef, Pork, Poultry, Lamb, or Fish
-2. **Choose Cut** — Dynamically shows cuts available for that protein
-3. **Set Thickness** — Drag slider from 0.5" to 2.5"
-4. **Pick Grill Heat** — Medium or High
-5. **Choose Doneness** — Rare through Well Done (varies by protein)
-6. **Optional Env Toggles** — Enable Cold Weather or High Altitude if needed
-7. **View Calculated Times** — Shows Side A, Side B, Indirect Heat, Rest
-8. **Start Timer** — Tap "Start Timer" to begin the cook
-9. **Follow Instructions** — Tap "Pause" if needed. Tap "Cancel" to abort
-10. **Audio Alert** — Chime sounds when each stage completes
-11. **Save Favorite** — After cooking, tap "Save as Favorite" to store the recipe
-
----
-
-## Browser Support
-
-✅ Chrome 90+  
-✅ Safari 14+  
-✅ Firefox 88+  
-✅ Edge 90+  
-
-Requires:
-- ES6 (arrow functions, `const`, template literals)
-- CSS Grid, Flexbox
-- Web Audio API
-- `clamp()` CSS function
-
----
-
-## Tips for Best Results
-
-### General
-- **Pat meat dry** before grilling — moisture prevents a good sear
-- **Room temp meat** — pull from fridge 30 min before cooking for even results
-- **Use a probe** — the Thermometer 101 guide shows what to look for, but a $15 instant-read probe is invaluable
-- **Don't press the meat** — you're squeezing out the juices
-- **Rest is critical** — the juices need time to redistribute
-
-### Grilling
-- **High heat for the sear** — 450°F+ on direct heat creates the crust
-- **Prevent flare-ups** — have a spray bottle handy
-- **Know your grill** — temperature hot spots vary. Adjust times if needed
-- **Flip only once** — more flipping = harder crust, tougher meat
-
-### Customization
-Each cook is different. If your grill runs hot/cold, adjust:
-- Grill Heat selection (Medium vs High)
-- Thickness slider to match your actual meat thickness
-- Cold Weather / High Altitude toggles for your environment
-
-After a few cooks, you'll dial in perfect times — save them as Favorites!
-
----
-
-## Troubleshooting
-
-### Audio doesn't play
-- **Browser:** Some browsers require user interaction before playing audio. Tap "Start Timer" once to unlock, then audio should work.
-- **Phone (muted):** Unmute the device. Web Audio respects the silent toggle on iOS.
-- **Capacitor (native app):** Ensure `@capacitor/local-notifications` is installed and synced.
-
-### Times seem too long/short
-- Double-check **Thickness** — a 0.5" difference changes times significantly
-- Verify **Doneness** — rare cooks ~25% faster than well done
-- Check **Grill Heat** — high heat is 1.1x faster than medium
-- Enable **Cold Weather** (+15%) or **High Altitude** (+25%) if applicable
-
-### Favorites not saving
-- Favorites persist **only for this session** in the browser
-- If you refresh the page, favorites are lost
-- **Solution:** Deploy as a Capacitor native app → favorites sync to device storage
-
-### App looks zoomed/blurry on mobile
-- Ensure "Zoom" is at 100% in browser settings
-- On Safari: Settings → Safari → Page Zoom → reset to 100%
-
----
+Cooking times are estimates. The app does not measure food temperature. Use a food thermometer and follow the safe minimum temperatures for the food being cooked.
 
 ## Development
 
-### Local Testing
+The web interface lives in `www/`. It uses local assets and system fonts, with no web build step, backend, or account requirement. Node 24 and npm 11 were validated in the cloud workspace.
+
 ```bash
-# Clone the repo
-git clone https://github.com/yourusername/grill-master.git
-cd grill-master
-
-# Open in browser (no server needed!)
-open grill-master.html
-# or on Linux:
-firefox grill-master.html
+npm ci
+npm run serve
 ```
 
-### Browser DevTools Testing
-1. Open DevTools (F12)
-2. Toggle Device Toolbar (Ctrl+Shift+M) for mobile preview
-3. Test at 375px (iPhone SE), 390px (iPhone 14), 768px (iPad)
+The development server uses port 4173. Use the existing checkout; cloud tasks are already isolated and do not need an additional Git worktree unless requested.
 
-### Adding New Cuts
-Edit `MEAT_DB` in the `<script>` section:
-```javascript
-beef: {
-  label: 'Beef',
-  cuts: [
-    { name: 'New Cut Name', factor: 1.05 },  // 1.0 = baseline
-    // ... more cuts
-  ],
-  // ... doneness options
-}
+### Tests
+
+```bash
+npx playwright install --with-deps chromium webkit
+npm test -- --workers=2
 ```
 
-Factor ~1.0 = baseline heat penetration. Higher = slower to cook (thicker, denser). Lower = faster.
+The suite includes foundation flows and regressions for safe-temperature guidance, timer recovery, independent queue alerts, simultaneous expiries, snoozing, failed saves, native bridge ordering, and keyboard dialogs. The `iphone` project uses WebKit; `mobile-chromium` uses Chromium with an iPhone viewport and touch emulation. Browser tests do not validate native iOS notifications or ActivityKit.
 
-### Deploying to GitHub
+When using the cloud image's installed Chromium:
 
-1. **Create repo**:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit: Grill Master app"
-   git remote add origin https://github.com/yourusername/grill-master.git
-   git branch -M main
-   git push -u origin main
-   ```
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:chromium
+```
 
-2. **Enable GitHub Pages** (optional for instant web hosting):
-   - Go to Settings → Pages
-   - Source: `main` branch, `/` (root)
-   - Save
-   - Your app is live at `https://yourusername.github.io/grill-master`
+Use `npm run test:webkit` after installing WebKit. The default test run excludes screenshot/icon generators because those overwrite committed artwork. Browser test artifacts are ignored.
 
----
+## App behavior
 
-## Performance
+- Main and queued cooks retain their configuration, deadlines, paused state, and pending acknowledgements locally.
+- Returning after an expired stage asks for acknowledgement rather than automatically advancing food through unattended stages.
+- Queue timers schedule independent local notifications on native iOS. Notification denial or scheduling failures are shown in the app.
+- Cook history and runtime state use Capacitor Preferences when available, otherwise browser local storage. There is no app-provided cloud sync; system backups depend on device settings.
+- The interface supports narrow screens, tablet layouts, text scaling, keyboard dialogs, and reduced motion. Native VoiceOver, large text, and real-device testing remain release gates.
 
-- **Load time:** <500ms (no build step, single HTML file)
-- **Bundle size:** 56KB (minified)
-- **Battery:** ~5% drain per 30-minute cook
-- **Memory:** Stable over extended sessions
+## iOS and system integrations
 
----
+The Xcode workspace is `ios/App/App.xcworkspace`, shared scheme `App`. Native sources include three App Shortcuts (configure cook, open active cook, open temperature guide), a current-cook widget, and a Live Activity/Dynamic Island presentation. A Capacitor bridge shares a small current-cook snapshot with the extension. The custom URLs are `grillmaster://configure`, `grillmaster://active`, and `grillmaster://temperatures`.
 
-## Privacy & Data
+The app deployment target is iOS 13; App Intents are gated to iOS 16, and the widget/Live Activity extension requires iOS 16.2. Native integration source and project structure were reviewed on Linux; Apple SDK compilation and device behavior require the macOS validation workflow. A Live Activity displays the current stage deadline and marks an overdue snapshot stale; it does not silently advance cooking stages in the background.
 
-**Zero tracking. Zero analytics. Zero external requests except Google Fonts CDN.**
+On a Mac with Xcode and CocoaPods:
 
-- App runs entirely locally in your browser
-- Favorites stored in browser localStorage (persist after refresh; private per browser/profile)
-- No data sent to any server
-- No accounts required
+```bash
+npm ci
+npx cap sync ios
+bash scripts/release/validate-ios.sh
+```
 
----
+See [native validation and TestFlight setup](scripts/release/README.md) for signing, App Group provisioning, secure GitHub Actions secrets, genuine simulator screenshots, archive/upload, and independent Apple API verification. Never commit credentials or signing artifacts.
 
-## License
+## Public documents and distribution
 
-MIT License — free to use, modify, and distribute. See LICENSE file.
+`docs/` contains the static home, support, and privacy pages. The Pages workflow publishes this directory from `main` after GitHub Pages is configured to use GitHub Actions. These are intended production URLs; publication must be verified:
 
----
+- https://dirkwbeveridge.github.io/grill-master/
+- https://dirkwbeveridge.github.io/grill-master/support/
+- https://dirkwbeveridge.github.io/grill-master/privacy/
 
-## Contributing
+The installed iOS app bundles `www/`; it does not need GitHub Pages or Vercel to run. Apple handles the paid download. The requested base price is $0.99 USD, configured in App Store Connect after paid-app agreements, tax, and banking setup.
 
-Found a bug? Have a feature idea?
+See the [release handoff](release/README.md) for listing copy, review notes, privacy/account decisions, and screenshot requirements. TestFlight upload, App Review approval, and public availability are separate outcomes and must be recorded from actual Apple results.
 
-1. **Test thoroughly** — try multiple cuts, doneness levels, temps
-2. **Report clearly** — include protein, cut, thickness, temp setting
-3. **Submit a PR** with your improvement
-
-Potential improvements:
-- Bluetooth thermometer probe integration
-- Cook history with photos
-- Oven/smoker modes
-- Multi-steak simultaneous tracking
-
----
-
-## Inspiration & Credits
-
-Algorithm based on USDA food safety temps and professional grilling guides:
-- USDA Safe Minimum Cooking Temperatures
-- Serious Eats: The Science of Grilling
-- Bradley Kunkle's grilling methodology
-
-Built with modern web standards: HTML5, CSS3, ES6 JavaScript, Web Audio API.
-
----
-
-**Questions?** Open an issue on GitHub or email [your contact].
-
-Happy grilling! 🔥
-
----
-
-### Roadmap
-
-**v2.1** — Bluetooth thermometer probe integration  
-**v2.2** — Cook history & journaling  
-**v2.3** — Apple Watch app, CarPlay integration  
-**v3.0** — Social sharing, community recipes  
+MIT license; see [LICENSE](LICENSE).

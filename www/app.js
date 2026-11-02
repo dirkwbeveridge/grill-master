@@ -235,6 +235,10 @@ const cook = {
   total: 0,
   remaining: 0,
   startTime: 0,
+  deadline: 0,
+  active: false,
+  completed: false,
+  config: null,
   tickInterval: null,
   pendingStage: undefined,
   notificationIds: [],
@@ -251,37 +255,105 @@ let nextLaneId = 1;
 const MAX_LANES = 4;
 
 /* ─── PERSISTENCE (Capacitor Preferences if available, else localStorage) ── */
+const RUNTIME_KEY = 'gm-runtime-v1';
+let storageWrites = Promise.resolve();
+let pendingConfirmations = [];
+let runtimeWarningShown = false;
+
+async function readStored(key) {
+  const preferences = window.Capacitor?.Plugins?.Preferences;
+  return preferences ? (await preferences.get({ key })).value : localStorage.getItem(key);
+}
+function writeStored(key, value) {
+  // Capture each snapshot at the call site; serialize native writes so an older
+  // snapshot can never finish after a newer one.
+  const preferences = window.Capacitor?.Plugins?.Preferences;
+  if (!preferences) {
+    try { localStorage.setItem(key, value); return Promise.resolve(true); }
+    catch { return Promise.resolve(false); }
+  }
+  const result = storageWrites.then(() => preferences.set({ key, value })).then(() => true, () => false);
+  storageWrites = result.then(() => undefined);
+  return result;
+}
 async function persistLoad() {
   try {
-    const cap = window.Capacitor;
-    if (cap?.Plugins?.Preferences) {
-      const { value } = await cap.Plugins.Preferences.get({ key: 'gm-log' });
-      if (value) {
-        const data = JSON.parse(value);
-        log = data.log || [];
-        nextLogId = data.nextLogId || 1;
-        return;
-      }
-    }
-    const raw = localStorage.getItem('gm-log');
+    const raw = await readStored('gm-log');
     if (raw) {
       const data = JSON.parse(raw);
-      log = data.log || [];
-      nextLogId = data.nextLogId || 1;
+      log = Array.isArray(data.log) ? data.log : [];
+      nextLogId = Math.max(data.nextLogId || 1, ...log.map(entry => Number(entry.id) + 1));
     }
-  } catch (e) { /* ignore */ }
+  } catch { showToast('Cook history could not be loaded. Try reopening the app.'); }
 }
-
-async function persistSave() {
-  const payload = JSON.stringify({ log, nextLogId });
-  try {
-    const cap = window.Capacitor;
-    if (cap?.Plugins?.Preferences) {
-      await cap.Plugins.Preferences.set({ key: 'gm-log', value: payload });
-      return;
+function persistSave() {
+  return writeStored('gm-log', JSON.stringify({ log, nextLogId }));
+}
+function serialTimer(timer) {
+  const { tickInterval, interval, notificationTask, ...saved } = timer;
+  return saved;
+}
+function persistRuntime() {
+  const saved = {
+    version: 1, state: { ...state }, times: { ...times },
+    cook: serialTimer(cook), queue: Object.values(queue).map(serialTimer),
+    nextLaneId, pendingConfirmations,
+  };
+  return writeStored(RUNTIME_KEY, JSON.stringify(saved)).then(ok => {
+    if (!ok && !runtimeWarningShown) {
+      runtimeWarningShown = true;
+      showToast('Timer could not be saved. Keep the app open; retry after freeing storage.');
     }
-    localStorage.setItem('gm-log', payload);
-  } catch (e) { /* ignore */ }
+    if (ok) runtimeWarningShown = false;
+    return ok;
+  });
+}
+function validTimer(timer) {
+  return timer && Number.isInteger(timer.stage) && timer.stage >= -1 && timer.stage <= 4 &&
+    Number.isFinite(timer.remaining) && timer.remaining >= 0 && Number.isFinite(timer.total) &&
+    timer.times && STAGES.every(stage => Number.isFinite(timer.times[stage]) && timer.times[stage] >= 0) &&
+    (timer.paused || !timer.running || Number.isFinite(timer.deadline));
+}
+async function restoreRuntime() {
+  try {
+    const raw = await readStored(RUNTIME_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.version !== 1) return;
+    if (saved.state?.protein && MEAT_DB[saved.state.protein]) {
+      const selection = saved.state;
+      selectProtein(selection.protein);
+      Object.assign(state, selection);
+      syncSetupUI();
+      calculate();
+    }
+    if (saved.cook?.active && validTimer(saved.cook)) {
+      Object.assign(cook, saved.cook, { tickInterval: null });
+      Object.assign(times, cook.times);
+      renderActiveCook();
+      if (cook.completed) renderCookFinished();
+      else {
+        updateStageUI(cook.stage);
+        $('timer-display').textContent = fmtDisplay(cook.remaining);
+        $('btn-pause').textContent = cook.paused ? 'Resume' : 'Pause';
+      }
+    }
+    for (const lane of (Array.isArray(saved.queue) ? saved.queue : []).slice(0, MAX_LANES)) {
+      if (Number.isInteger(lane.id) && lane.id > 0 && validTimer(lane)) {
+        queue[lane.id] = { ...lane, interval: null };
+      }
+    }
+    nextLaneId = Math.max(saved.nextLaneId || 1, ...Object.keys(queue).map(id => Number(id) + 1));
+    pendingConfirmations = (saved.pendingConfirmations || []).filter(item =>
+      item.kind === 'main' ? cook.active && cook.pendingStage !== undefined : queue[item.id]?.pendingStage !== undefined);
+    // Recover pending acknowledgements even if an interrupted older write omitted the list.
+    if (cook.active && cook.pendingStage !== undefined) enqueueConfirmation('main', null, false);
+    Object.values(queue).forEach(lane => {
+      if (lane.pendingStage !== undefined) enqueueConfirmation('lane', lane.id, false);
+    });
+    reconcileTimers();
+    renderQueue();
+  } catch { showToast('Saved timers could not be restored. Check food with a thermometer.'); }
 }
 
 /* ─── HAPTICS (Capacitor optional) ──────────────────────────────── */
@@ -296,39 +368,96 @@ function haptic(style = 'medium') {
 }
 
 /* ─── LOCAL NOTIFICATIONS (Capacitor optional) ──────────────────── */
-async function scheduleStageNotifications(stageIdx, secondsRemaining) {
-  try {
-    const cap = window.Capacitor;
-    if (!cap?.Plugins?.LocalNotifications) return;
-    const LN = cap.Plugins.LocalNotifications;
-    const perm = await LN.checkPermissions();
-    if (perm.display !== 'granted') {
-      const req = await LN.requestPermissions();
-      if (req.display !== 'granted') return;
-    }
-    const at = new Date(Date.now() + secondsRemaining * 1000);
-    const id = Math.floor(Math.random() * 100000);
-    cook.notificationIds.push(id);
-    await LN.schedule({
-      notifications: [{
-        id,
-        title: STAGE_CONFIRM[stageIdx]?.title || 'Grill Master',
-        body: STAGE_CONFIRM[stageIdx]?.sub || 'Stage complete',
-        schedule: { at },
-      }],
-    });
-  } catch (e) { /* ignore */ }
+let notificationTasks = Promise.resolve();
+let notificationWarningShown = false;
+function notificationWarning(message) {
+  if (notificationWarningShown) return;
+  notificationWarningShown = true;
+  showToast(message);
 }
-
-async function clearScheduledNotifications() {
-  try {
-    const cap = window.Capacitor;
-    if (!cap?.Plugins?.LocalNotifications || !cook.notificationIds.length) return;
-    await cap.Plugins.LocalNotifications.cancel({
-      notifications: cook.notificationIds.map(id => ({ id })),
-    });
-    cook.notificationIds = [];
-  } catch (e) { /* ignore */ }
+function scheduleStageNotifications(stageIdx, secondsRemaining, owner = cook, laneId = null) {
+  const LN = window.Capacitor?.Plugins?.LocalNotifications;
+  if (!LN) return Promise.resolve();
+  const deadline = owner.deadline;
+  const id = laneId === null ? 1 : 1000 + laneId;
+  owner.notificationIds = [id];
+  persistRuntime();
+  notificationTasks = notificationTasks.then(async () => {
+    if (!owner.running || owner.paused || owner.deadline !== deadline) return;
+    try {
+      let perm = await LN.checkPermissions();
+      if (perm.display === 'prompt' || perm.display === 'prompt-with-rationale') perm = await LN.requestPermissions();
+      if (perm.display !== 'granted') {
+        notificationWarning('Alerts are off. Enable notifications in Settings for background timer alerts.');
+        return;
+      }
+      // Permission prompts may outlive a pause/cancel or the timer itself.
+      if (!owner.running || owner.paused || owner.deadline !== deadline || deadline <= Date.now()) return;
+      const config = owner.config || state;
+      await LN.schedule({ notifications: [{ id,
+        title: `${laneId === null ? config.cut : owner.label} · ${STAGE_LABELS[stageIdx]} complete`,
+        body: stageIdx >= 2 ? temperatureGuidance(config) : STAGE_CONFIRM[stageIdx].sub,
+        schedule: { at: new Date(deadline) },
+      }] });
+      notificationWarningShown = false;
+    } catch { notificationWarning('Background alert could not be scheduled. Keep the app open and check notification settings.'); }
+  });
+  return notificationTasks;
+}
+function clearScheduledNotifications(owner = cook) {
+  const ids = [...(owner.notificationIds || [])];
+  owner.notificationIds = [];
+  const LN = window.Capacitor?.Plugins?.LocalNotifications;
+  if (!LN || !ids.length) return Promise.resolve();
+  notificationTasks = notificationTasks.then(async () => {
+    try { await LN.cancel({ notifications: ids.map(id => ({ id })) }); }
+    catch { notificationWarning('An old alert could not be cleared. Check the timer in the app.'); }
+  });
+  return notificationTasks;
+}
+let nativeCookTasks = Promise.resolve();
+function syncNativeCook() {
+  const native = window.Capacitor?.Plugins?.GrillMasterNative;
+  if (!native) return Promise.resolve();
+  const config = cook.config || state;
+  const active = cook.active && !cook.completed && !cook.paused;
+  const snapshot = { cook: {
+    id: cook.id || 'main', title: config.cut || 'Grill Master',
+    phase: cook.pendingStage !== undefined ? 'Check food' : STAGE_LABELS[cook.stage],
+    startedAt: cook.startedAt, endsAt: cook.deadline || Date.now(),
+    targetTemperature: config.doneTemp, unit: 'F', active: true,
+  } };
+  // ActivityKit calls cross async native boundaries. Preserve invocation order
+  // so an earlier start cannot resurrect an activity after pause or cancel.
+  nativeCookTasks = nativeCookTasks.then(() => active ? native.syncCook(snapshot) : native.endCook()).catch(() => {});
+  return nativeCookTasks;
+}
+function handleNativeRoute({ destination } = {}) {
+  if (destination === 'temperatures') switchTab('temp');
+  else if (destination === 'active') switchTab(cook.active ? 'timer' : laneCount() ? 'queue' : 'timer');
+  else if (destination === 'configure') switchTab('timer');
+}
+function reconcileTimers() {
+  if (cook.active && cook.running && !cook.paused && cook.pendingStage === undefined) {
+    tick();
+    if (cook.running) {
+      clearInterval(cook.tickInterval);
+      cook.tickInterval = setInterval(tick, 250);
+      scheduleStageNotifications(cook.stage, cook.remaining);
+    }
+  }
+  Object.values(queue).forEach(lane => {
+    if (lane.running && !lane.paused && lane.pendingStage === undefined) {
+      tickLane(lane.id);
+      if (lane.running) {
+        clearInterval(lane.interval);
+        lane.interval = setInterval(() => tickLane(lane.id), 500);
+        scheduleStageNotifications(lane.stage, lane.remaining, lane, lane.id);
+      }
+    }
+  });
+  showNextConfirmation();
+  syncNativeCook();
 }
 
 /* ─── ELEMENT HELPERS ───────────────────────────────────────────── */
@@ -341,6 +470,7 @@ function switchTab(name) {
   ['timer', 'queue', 'log', 'temp'].forEach(t => {
     $('tab-' + t).classList.toggle('active', t === name);
     $('tab-' + t).setAttribute('aria-selected', t === name);
+    $('tab-' + t).tabIndex = t === name ? 0 : -1;
     $('panel-' + t).classList.toggle('active', t === name);
   });
   if (name === 'log') renderLog();
@@ -431,6 +561,7 @@ function selectCut(name, factor, btnEl) {
   btnEl.setAttribute('aria-pressed', 'true');
   $('ans-cut').textContent = name;
   applyThicknessVisibility(name);
+  buildDoneness(state.protein);
   haptic('light');
   calculate();
 }
@@ -482,14 +613,39 @@ function setupHeatPills() {
 }
 
 /* ─── DONENESS ──────────────────────────────────────────────────── */
-function buildDoneness(key) {
+function donenessOptions(config) {
+  if (config.protein === 'burger' && config.cut === 'Turkey Burger') {
+    return [{ label: 'Safe (165°F)', temp: 165, factor: 1.50 }];
+  }
+  if (config.protein === 'burger' && config.cut === 'Veggie Burger') {
+    return [{ label: 'Package directions', temp: 165, factor: 1.20 }];
+  }
+  return MEAT_DB[config.protein].doneness;
+}
+function normalizeTemperature(config) {
+  const option = donenessOptions(config).find(opt => opt.label === config.doneness) || donenessOptions(config)[0];
+  config.doneness = option.label;
+  config.doneTemp = option.temp;
+  config.doneFactor = option.factor;
+}
+function temperatureGuidance(config) {
+  if (config.protein === 'poultry' || config.cut === 'Turkey Burger') return 'Check the thickest part with a thermometer: at least 165°F before removing from heat. Time alone cannot confirm safety.';
+  if (config.protein === 'burger' && config.cut !== 'Veggie Burger' || config.protein === 'sausage') return 'Confirm at least 160°F internally with a thermometer before removing from heat. Poultry sausage needs 165°F; follow package directions.';
+  if (config.protein === 'pork') return 'Confirm at least 145°F internally with a thermometer, then rest at least 3 minutes. Carryover varies.';
+  if (config.protein === 'fish') return 'USDA guidance: confirm 145°F internally with a thermometer. Lower doneness choices carry greater foodborne illness risk.';
+  if (config.protein === 'beef' || config.protein === 'lamb') return 'USDA guidance for whole cuts: confirm 145°F internally, then rest at least 3 minutes. Lower doneness choices carry greater foodborne illness risk.';
+  return 'Follow package cooking directions and check with a thermometer when required. Time is an estimate.';
+}
+function buildDoneness(key, preserve = false) {
   const row = $('doneness-pills');
   row.innerHTML = '';
-  MEAT_DB[key].doneness.forEach((opt, i) => {
+  const options = donenessOptions(state);
+  const chosen = preserve ? options.find(opt => opt.label === state.doneness) || options[0] : options[0];
+  options.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'pill' + (i === 0 ? ' active' : '');
-    btn.setAttribute('aria-pressed', i === 0);
+    btn.className = 'pill' + (opt === chosen ? ' active' : '');
+    btn.setAttribute('aria-pressed', opt === chosen);
     btn.textContent = opt.label;
     btn.addEventListener('click', () => {
       state.doneness = opt.label;
@@ -508,7 +664,7 @@ function buildDoneness(key) {
     row.appendChild(btn);
   });
   // auto-select first
-  const first = MEAT_DB[key].doneness[0];
+  const first = chosen;
   state.doneness = first.label;
   state.doneTemp = first.temp;
   state.doneFactor = first.factor;
@@ -561,6 +717,7 @@ function setupEnvToggles() {
 function calculate() {
   if (!state.protein || !state.cut || !state.heat || !state.doneness) return;
 
+  normalizeTemperature(state);
   const base = 7.5;
   let totalMins = base * state.thickness * state.doneFactor * state.cutFactor * state.heatFactor * state.grillFactor;
   if (state.winter) totalMins *= 1.15;
@@ -596,8 +753,10 @@ function calculate() {
   // Target temperature shown for proteins where it's meaningful
   if (['beef', 'pork', 'lamb', 'fish'].includes(state.protein)) {
     $('results-target').textContent = `${state.doneTemp}°F`;
+  } else if (state.protein === 'veggie' || state.cut === 'Veggie Burger') {
+    $('results-target').textContent = state.cut === 'Veggie Burger' ? 'Package directions' : 'Texture guide';
   } else {
-    $('results-target').textContent = `${state.doneTemp}°F safe`;
+    $('results-target').textContent = `${state.doneTemp}°F minimum`;
   }
 
   show('sect-results');
@@ -628,7 +787,7 @@ const STAGE_INSTRUCTIONS_CHARCOAL = [
   'Off the coals. Tent loose with foil.',
 ];
 function stageInstruction(idx) {
-  const set = state.grill === 'charcoal' ? STAGE_INSTRUCTIONS_CHARCOAL : STAGE_INSTRUCTIONS_GAS;
+  const set = (cook.config || state).grill === 'charcoal' ? STAGE_INSTRUCTIONS_CHARCOAL : STAGE_INSTRUCTIONS_GAS;
   return set[idx] || '';
 }
 
@@ -639,65 +798,77 @@ const STAGE_CONFIRM = [
   { eyebrow: 'Cook complete', title: 'Done.', sub: 'Slice across the grain. Serve.', action: 'Eat' },
 ];
 
-function startCook() {
-  if (!state.protein || !state.cut || !state.heat || !state.doneness) return;
-  initAudio();
+function renderActiveCook() {
+  const config = cook.config || state;
   hide('setup-form');
   show('active-timer');
-  // Header context
-  const spec = `${state.cut} · ${state.thickness}″ · ${state.doneness}`;
-  $('timer-spec').textContent = spec.toUpperCase();
-  $('timer-target').innerHTML = `<span class="v target">${state.doneTemp}°F</span>`;
-  $('timer-pull').innerHTML = `<span class="v">${state.doneTemp - 5}°F</span>`;
+  $('timer-spec').textContent = `${config.cut} · ${config.thickness}″ · ${config.doneness}`.toUpperCase();
+  const setTemperature = (id, text, target = false) => {
+    const value = document.createElement('span');
+    value.className = target ? 'v target' : 'v';
+    value.textContent = text;
+    $(id).replaceChildren(value);
+  };
+  setTemperature('timer-target', `${config.doneTemp}°F`, true);
+  setTemperature('timer-pull', config.protein === 'veggie' || config.cut === 'Veggie Burger' ? 'See package' : `${Math.max(config.doneTemp, config.protein === 'fish' || ['beef', 'pork', 'lamb'].includes(config.protein) ? 145 : config.doneTemp)}°F`);
+  $('timer-carryover').textContent = temperatureGuidance(config);
+  show('timer-carryover');
   $('btn-pause').disabled = false;
   $('btn-pause').textContent = 'Pause';
   hide('howd-prompt');
-  cook.stage = 0;
+}
+function startCook() {
+  if (!state.protein || !state.cut || !state.heat || !state.doneness) return;
+  initAudio();
+  normalizeTemperature(state);
+  cook.config = { ...state };
+  cook.times = { ...times };
+  cook.id = `cook-${Date.now()}`;
+  cook.startedAt = Date.now();
+  cook.active = true;
+  cook.completed = false;
+  cook.logged = false;
+  cook.pendingStage = undefined;
+  renderActiveCook();
   runStage(0);
 }
-
-function runStage(idx) {
-  while (idx < STAGES.length && times[STAGES[idx]] <= 0) idx++;
+function runStage(idx, duration) {
+  const stageTimes = cook.times || times;
+  while (idx < STAGES.length && stageTimes[STAGES[idx]] <= 0) idx++;
   if (idx >= STAGES.length) { finishCook(); return; }
-
+  clearScheduledNotifications();
   cook.stage = idx;
-  cook.total = times[STAGES[idx]];
+  cook.total = duration ?? stageTimes[STAGES[idx]];
   cook.remaining = cook.total;
   cook.paused = false;
   cook.running = true;
-  cook.startTime = performance.now();
-
+  cook.pendingStage = undefined;
+  cook.startTime = Date.now();
+  cook.deadline = Date.now() + cook.total * 1000;
   updateStageUI(idx);
   $('btn-pause').textContent = 'Pause';
-
-  // Carryover note during rest stage
-  if (STAGES[idx] === 'rest' && ['beef', 'pork', 'lamb', 'fish'].includes(state.protein)) {
-    const pull = state.doneTemp - 5;
-    $('timer-carryover').innerHTML =
-      `Pulled at ${pull}°F. Climbs to ${state.doneTemp}°F during rest. Hold.`;
-    show('timer-carryover');
-  } else {
-    hide('timer-carryover');
-  }
-
+  $('btn-pause').disabled = false;
+  $('timer-carryover').textContent = temperatureGuidance(cook.config || state);
+  show('timer-carryover');
   clearInterval(cook.tickInterval);
   cook.tickInterval = setInterval(tick, 250);
-
-  // Schedule notification at stage end (Capacitor-optional)
+  persistRuntime();
   scheduleStageNotifications(idx, cook.total);
+  syncNativeCook();
 }
-
 function tick() {
   if (cook.paused || !cook.running) return;
-  const elapsed = (performance.now() - cook.startTime) / 1000;
-  cook.remaining = Math.max(0, cook.total - elapsed);
+  cook.remaining = Math.max(0, (cook.deadline - Date.now()) / 1000);
   $('timer-display').textContent = fmtDisplay(cook.remaining);
   if (cook.remaining <= 0) {
     clearInterval(cook.tickInterval);
     cook.tickInterval = null;
     cook.running = false;
+    cook.deadline = 0;
+    clearScheduledNotifications();
     playAlarm(cook.stage);
-    setTimeout(() => showConfirmOverlay(cook.stage + 1), 600);
+    showConfirmOverlay(cook.stage + 1);
+    syncNativeCook();
   }
 }
 
@@ -723,103 +894,138 @@ function updateStageUI(idx) {
 
 function togglePause() {
   if (!cook.running && !cook.paused) return;
-  cook.paused = !cook.paused;
-  if (cook.paused) {
-    const elapsed = (performance.now() - cook.startTime) / 1000;
-    cook.remaining = Math.max(0, cook.total - elapsed);
+  if (!cook.paused) {
+    tick();
+    if (!cook.running) return;
+    cook.paused = true;
+    cook.running = false;
+    cook.deadline = 0;
+    clearInterval(cook.tickInterval);
+    cook.tickInterval = null;
     $('btn-pause').textContent = 'Resume';
     clearScheduledNotifications();
   } else {
-    cook.startTime = performance.now() - (cook.total - cook.remaining) * 1000;
+    cook.paused = false;
     cook.running = true;
-    if (!cook.tickInterval) cook.tickInterval = setInterval(tick, 250);
+    cook.deadline = Date.now() + cook.remaining * 1000;
+    cook.tickInterval = setInterval(tick, 250);
     $('btn-pause').textContent = 'Pause';
     scheduleStageNotifications(cook.stage, cook.remaining);
   }
+  persistRuntime();
+  syncNativeCook();
   haptic('light');
 }
-
+function removeConfirmation(kind, id) {
+  pendingConfirmations = pendingConfirmations.filter(item => !(item.kind === kind && item.id === id));
+}
 function cancelCook() {
   clearInterval(cook.tickInterval);
   cook.tickInterval = null;
   cook.running = false;
+  cook.paused = false;
+  cook.active = false;
+  cook.completed = false;
+  cook.deadline = 0;
+  cook.pendingStage = undefined;
+  removeConfirmation('main', null);
   clearScheduledNotifications();
   stopAlarm();
   hide('active-timer');
   show('setup-form');
   $('btn-pause').disabled = false;
+  showNextConfirmation();
+  persistRuntime();
+  syncNativeCook();
 }
-
+function enqueueConfirmation(kind, id, render = true) {
+  if (!pendingConfirmations.some(item => item.kind === kind && item.id === id)) pendingConfirmations.push({ kind, id });
+  if (render) { showNextConfirmation(); persistRuntime(); }
+}
 function showConfirmOverlay(nextIdx) {
-  if (nextIdx >= STAGES.length) { finishCook(); return; }
-  while (nextIdx < STAGES.length && times[STAGES[nextIdx]] <= 0) nextIdx++;
-  if (nextIdx >= STAGES.length) { finishCook(); return; }
-
+  const stageTimes = cook.times || times;
+  while (nextIdx < STAGES.length && stageTimes[STAGES[nextIdx]] <= 0) nextIdx++;
   cook.pendingStage = nextIdx;
-  const c = STAGE_CONFIRM[nextIdx - 1] || STAGE_CONFIRM[0];
-  $('confirm-eyebrow').textContent = c.eyebrow;
-  $('confirm-title').innerHTML = `<em>${c.title}</em>`;
-  $('confirm-sub').textContent = c.sub;
-  $('btn-confirm-action').textContent = c.action;
+  $('btn-pause').disabled = true;
+  enqueueConfirmation('main', null);
+}
+function showNextConfirmation() {
+  const item = pendingConfirmations[0];
+  if (!item) { $('confirm-overlay').classList.remove('open'); return; }
+  const owner = item.kind === 'main' ? cook : queue[item.id];
+  if (!owner || owner.pendingStage === undefined) {
+    pendingConfirmations.shift();
+    showNextConfirmation();
+    return;
+  }
+  const c = STAGE_CONFIRM[owner.stage] || STAGE_CONFIRM[0];
+  const config = owner.config || state;
+  $('confirm-eyebrow').textContent = item.kind === 'lane' ? `${owner.label} · ${c.eyebrow}` : c.eyebrow;
+  $('confirm-title').innerHTML = `<em>${owner.pendingStage === 3 ? 'Check it.' : c.title}</em>`;
+  $('confirm-sub').textContent = owner.pendingStage >= 3 ? temperatureGuidance(config) : c.sub;
+  $('btn-confirm-action').textContent = owner.pendingStage === 3 ? 'Temperature checked — start Rest' : owner.pendingStage >= 4 ? 'Checked — finish cook' : c.action;
   $('confirm-overlay').classList.add('open');
   haptic('heavy');
 }
-
 function confirmStageAdvance() {
-  $('confirm-overlay').classList.remove('open');
+  const item = pendingConfirmations.shift();
+  if (!item) return;
   stopAlarm();
-  if (cook.pendingIsLane) {
-    cook.pendingIsLane = false;
-    const laneId = cook.pendingLaneId;
-    const nextStage = cook.pendingLaneStage;
-    cook.pendingLaneId = undefined;
-    cook.pendingLaneStage = undefined;
-    if (queue[laneId]) {
-      if (nextStage >= 4) finishLane(laneId);
-      else runLaneStage(laneId, nextStage);
-    }
-    return;
+  const owner = item.kind === 'main' ? cook : queue[item.id];
+  if (owner) {
+    const next = owner.pendingStage;
+    owner.pendingStage = undefined;
+    if (item.kind === 'lane') {
+      if (next >= STAGES.length) finishLane(item.id);
+      else runLaneStage(item.id, next);
+    } else if (next >= STAGES.length) finishCook();
+    else runStage(next);
   }
-  if (cook.pendingStage !== undefined) {
-    runStage(cook.pendingStage);
-    cook.pendingStage = undefined;
-  }
+  showNextConfirmation();
+  persistRuntime();
 }
-
 function snoozeStage() {
-  $('confirm-overlay').classList.remove('open');
+  const item = pendingConfirmations.shift();
+  if (!item) return;
   stopAlarm();
-  cook.total = 30;
-  cook.remaining = 30;
-  cook.startTime = performance.now();
-  cook.running = true;
-  cook.paused = false;
-  clearInterval(cook.tickInterval);
-  cook.tickInterval = setInterval(tick, 250);
+  const owner = item.kind === 'main' ? cook : queue[item.id];
+  if (owner) {
+    owner.pendingStage = undefined;
+    if (item.kind === 'lane') runLaneStage(item.id, owner.stage, 30);
+    else runStage(owner.stage, 30);
+  }
+  showNextConfirmation();
+  persistRuntime();
   showToast('+ 30s');
 }
-
+function renderCookFinished() {
+  $('timer-stage-small').textContent = 'Done';
+  $('timer-display').textContent = '✓';
+  $('timer-display').classList.add('done');
+  $('timer-instruction').textContent = 'Confirm safe internal temperature before serving.';
+  document.querySelectorAll('#timer-progress span').forEach(el => {
+    el.classList.remove('on'); el.classList.add('done');
+  });
+  document.querySelectorAll('#timer-stages-row span').forEach(el => {
+    el.classList.remove('now'); el.classList.add('done');
+  });
+  hide('timer-carryover');
+  $('btn-pause').disabled = true;
+  $('howd-prompt').classList.toggle('hidden', !!cook.logged);
+}
 function finishCook() {
   clearInterval(cook.tickInterval);
   cook.tickInterval = null;
   cook.running = false;
+  cook.paused = false;
+  cook.completed = true;
+  cook.deadline = 0;
+  cook.pendingStage = undefined;
   clearScheduledNotifications();
-  $('timer-stage-small').textContent = 'Done';
-  $('timer-display').textContent = '✓';
-  $('timer-display').classList.add('done');
-  $('timer-instruction').textContent = 'Slice across the grain.';
-  document.querySelectorAll('#timer-progress span').forEach(el => {
-    el.classList.remove('on');
-    el.classList.add('done');
-  });
-  document.querySelectorAll('#timer-stages-row span').forEach(el => {
-    el.classList.remove('now');
-    el.classList.add('done');
-  });
-  hide('timer-carryover');
-  $('btn-pause').disabled = true;
+  renderCookFinished();
+  persistRuntime();
+  syncNativeCook();
   haptic('heavy');
-  show('howd-prompt');
 }
 
 /* ─── HOW'D IT LAND? ────────────────────────────────────────────── */
@@ -827,12 +1033,11 @@ function setupHowdPrompt() {
   document.querySelectorAll('#howd-prompt button').forEach(btn => {
     btn.addEventListener('click', () => {
       const rating = btn.dataset.rating;
-      hide('howd-prompt');
+      btn.focus();
       // Prompt for name + save to log
-      $('fav-name-input').value = `${state.cut} · ${new Date().toLocaleDateString()}`;
+      $('fav-name-input').value = `${(cook.config || state).cut} · ${new Date().toLocaleDateString()}`;
       $('save-modal').classList.add('open');
       $('save-modal').dataset.rating = rating;
-      setTimeout(() => $('fav-name-input').focus(), 60);
     });
   });
 }
@@ -841,6 +1046,7 @@ function setupHowdPrompt() {
 function setupSaveModal() {
   $('btn-cancel-save').addEventListener('click', () => {
     $('save-modal').classList.remove('open');
+    if (cook.completed && !cook.logged) show('howd-prompt');
   });
   $('btn-confirm-save').addEventListener('click', confirmSave);
   $('fav-name-input').addEventListener('keydown', e => {
@@ -849,26 +1055,40 @@ function setupSaveModal() {
 }
 
 async function confirmSave() {
-  const name = $('fav-name-input').value.trim() || `${state.cut} · ${new Date().toLocaleDateString()}`;
+  const button = $('btn-confirm-save');
+  if (button.disabled) return;
+  button.disabled = true;
+  const config = cook.config || state;
+  const name = $('fav-name-input').value.trim() || `${config.cut} · ${new Date().toLocaleDateString()}`;
   const rating = $('save-modal').dataset.rating || null;
   log.unshift({
     id: nextLogId++,
     name,
     rating,
     date: Date.now(),
-    protein: state.protein,
-    cut: state.cut,
-    cutFactor: state.cutFactor,
-    thickness: state.thickness,
-    heat: state.heat,
-    heatFactor: state.heatFactor,
-    doneness: state.doneness,
-    doneTemp: state.doneTemp,
-    doneFactor: state.doneFactor,
-    grill: state.grill,
-    times: { ...times },
+    protein: config.protein,
+    cut: config.cut,
+    cutFactor: config.cutFactor,
+    thickness: config.thickness,
+    heat: config.heat,
+    heatFactor: config.heatFactor,
+    doneness: config.doneness,
+    doneTemp: config.doneTemp,
+    doneFactor: config.doneFactor,
+    grill: config.grill,
+    times: { ...(cook.times || times) },
   });
-  await persistSave();
+  const saved = await persistSave();
+  button.disabled = false;
+  if (!saved) {
+    log.shift();
+    nextLogId--;
+    showToast('Cook was not saved. Free storage and tap Log it again.');
+    return;
+  }
+  cook.logged = true;
+  hide('howd-prompt');
+  persistRuntime();
   $('save-modal').classList.remove('open');
   showToast('Logged');
   haptic('medium');
@@ -907,11 +1127,12 @@ function renderLog() {
 }
 
 function loadFromLog(id) {
+  if (cook.active && !cook.completed) { showToast('Finish or cancel the active cook before repeating a recipe.'); return; }
   const entry = log.find(e => e.id === id);
   if (!entry) return;
   // Restore state
   state.grill = entry.grill || 'gas';
-  state.grillFactor = state.grill === 'charcoal' ? 1.08 : 1.0;
+  state.grillFactor = state.grill === 'charcoal' ? 1.15 : 1.0;
   state.protein = entry.protein;
   selectProtein(entry.protein);
   state.cut = entry.cut;
@@ -922,36 +1143,37 @@ function loadFromLog(id) {
   state.doneness = entry.doneness;
   state.doneTemp = entry.doneTemp;
   state.doneFactor = entry.doneFactor;
+  normalizeTemperature(state);
+  buildDoneness(state.protein, true);
 
-  // Sync UI selectors
-  document.querySelectorAll('#grill-pills .pill').forEach(b => {
-    b.classList.toggle('active', b.dataset.grill === state.grill);
-  });
-  $('ans-grill').textContent = state.grill === 'charcoal' ? 'Charcoal' : 'Gas';
-  $('charcoal-cue').classList.toggle('hidden', state.grill !== 'charcoal');
-
-  document.querySelectorAll('#cut-pills .pill').forEach(b => {
-    const active = b.dataset.cut === state.cut;
-    b.classList.toggle('active', active);
-  });
-  $('ans-cut').textContent = state.cut;
-
-  $('thickness-input').value = state.thickness;
-  $('thickness-input').dispatchEvent(new Event('input'));
-
-  document.querySelectorAll('#heat-pills .pill').forEach(b => {
-    b.classList.toggle('active', b.dataset.heat === state.heat);
-  });
-  $('ans-heat').textContent = state.heat === 'high' ? 'High' : 'Medium';
-
-  document.querySelectorAll('#doneness-pills .pill').forEach(b => {
-    b.classList.toggle('active', b.textContent === state.doneness);
-  });
-  $('ans-doneness').textContent = state.doneness;
+  syncSetupUI();
 
   switchTab('timer');
   calculate();
   showToast('Loaded');
+}
+
+function syncSetupUI() {
+  const syncPills = (selector, matches) => document.querySelectorAll(selector).forEach(button => {
+    const selected = matches(button);
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  syncPills('#grill-pills .pill', button => button.dataset.grill === state.grill);
+  syncPills('#cut-pills .pill', button => button.dataset.cut === state.cut);
+  syncPills('#heat-pills .pill', button => button.dataset.heat === state.heat);
+  $('ans-grill').textContent = state.grill === 'charcoal' ? 'Charcoal' : 'Gas';
+  $('charcoal-cue').classList.toggle('hidden', state.grill !== 'charcoal');
+  $('ans-cut').textContent = state.cut;
+  $('ans-heat').textContent = state.heat === 'high' ? 'High' : 'Medium';
+  $('thickness-input').value = state.thickness;
+  $('thickness-input').dispatchEvent(new Event('input'));
+  applyThicknessVisibility(state.cut);
+  buildDoneness(state.protein, true);
+  ['winter', 'altitude'].forEach(key => {
+    $('toggle-' + key).classList.toggle('on', state[key]);
+    $('toggle-' + key).setAttribute('aria-pressed', String(state[key]));
+  });
 }
 
 /* ─── QUEUE FUNCTIONS ───────────────────────────────────────────── */
@@ -975,7 +1197,11 @@ function addToQueue() {
     grill: state.grill,
     heat: state.heat,
     doneTemp: state.doneTemp,
+    config: { ...state },
     times: { ...times },
+    running: false,
+    deadline: 0,
+    notificationIds: [],
     stage: -1,            // -1 = not started
     total: 0,
     remaining: 0,
@@ -985,6 +1211,7 @@ function addToQueue() {
   };
   renderQueue();
   switchTab('queue');
+  persistRuntime();
   showToast('Added to queue');
   haptic('medium');
 }
@@ -1027,7 +1254,7 @@ function renderQueue() {
           ? `<button class="lane-btn primary" data-act="start" data-id="${id}">Start</button>`
           : lane.stage >= 4
             ? `<button class="lane-btn" data-act="remove" data-id="${id}">Remove</button>`
-            : `<button class="lane-btn" data-act="pause" data-id="${id}">${lane.paused ? 'Resume' : 'Pause'}</button>
+            : `<button class="lane-btn" data-act="pause" data-id="${id}">${lane.pendingStage !== undefined ? 'Check food' : lane.paused ? 'Resume' : 'Pause'}</button>
                <button class="lane-btn" data-act="cancel" data-id="${id}">Cancel</button>`}
       </div>`;
     list.appendChild(row);
@@ -1043,7 +1270,7 @@ function handleLaneAction(act, id) {
   if (act === 'start') startLane(id);
   else if (act === 'pause') toggleLanePause(id);
   else if (act === 'cancel') cancelLane(id);
-  else if (act === 'remove') { delete queue[id]; renderQueue(); }
+  else if (act === 'remove') cancelLane(id);
 }
 
 function startLane(id) {
@@ -1053,89 +1280,103 @@ function startLane(id) {
   runLaneStage(id, 0);
 }
 
-function runLaneStage(id, idx) {
+function runLaneStage(id, idx, duration) {
   const lane = queue[id];
   if (!lane) return;
-  const STAGES_LANE = ['sideA', 'sideB', 'finish', 'rest'];
-  while (idx < STAGES_LANE.length && lane.times[STAGES_LANE[idx]] <= 0) idx++;
-  if (idx >= STAGES_LANE.length) { finishLane(id); return; }
+  while (idx < STAGES.length && lane.times[STAGES[idx]] <= 0) idx++;
+  if (idx >= STAGES.length) { finishLane(id); return; }
+  clearScheduledNotifications(lane);
   lane.stage = idx;
-  lane.total = lane.times[STAGES_LANE[idx]];
+  lane.total = duration ?? lane.times[STAGES[idx]];
   lane.remaining = lane.total;
   lane.paused = false;
-  lane.startTime = performance.now();
+  lane.running = true;
+  lane.pendingStage = undefined;
+  lane.startTime = Date.now();
+  lane.deadline = Date.now() + lane.total * 1000;
   clearInterval(lane.interval);
   lane.interval = setInterval(() => tickLane(id), 500);
   renderQueue();
+  persistRuntime();
+  scheduleStageNotifications(idx, lane.remaining, lane, id);
 }
-
 function tickLane(id) {
   const lane = queue[id];
-  if (!lane || lane.paused) return;
-  const elapsed = (performance.now() - lane.startTime) / 1000;
-  lane.remaining = Math.max(0, lane.total - elapsed);
-  // Live update just the time/stage cells
+  if (!lane || lane.paused || !lane.running) return;
+  lane.remaining = Math.max(0, (lane.deadline - Date.now()) / 1000);
   const card = document.querySelector(`[data-id="${id}"]`)?.closest('.lane-card');
-  if (card) {
-    const t = card.querySelector('.lane-time');
-    if (t) t.textContent = fmtDisplay(lane.remaining);
-  }
+  const display = card?.querySelector('.lane-time');
+  if (display) display.textContent = fmtDisplay(lane.remaining);
   if (lane.remaining <= 0) {
     clearInterval(lane.interval);
     lane.interval = null;
+    lane.running = false;
+    lane.deadline = 0;
+    clearScheduledNotifications(lane);
     playAlarm(lane.stage);
     showLaneConfirmOverlay(id, lane.stage + 1);
+    renderQueue();
   }
 }
-
 function toggleLanePause(id) {
   const lane = queue[id];
-  if (!lane) return;
-  lane.paused = !lane.paused;
-  if (lane.paused) {
-    const elapsed = (performance.now() - lane.startTime) / 1000;
-    lane.remaining = Math.max(0, lane.total - elapsed);
+  if (!lane || lane.stage < 0 || lane.stage >= 4) return;
+  if (lane.pendingStage !== undefined) { showNextConfirmation(); return; }
+  if (!lane.paused) {
+    tickLane(id);
+    if (!lane.running) return;
+    lane.paused = true;
+    lane.running = false;
+    lane.deadline = 0;
+    clearInterval(lane.interval);
+    lane.interval = null;
+    clearScheduledNotifications(lane);
   } else {
-    lane.startTime = performance.now() - (lane.total - lane.remaining) * 1000;
+    lane.paused = false;
+    lane.running = true;
+    lane.deadline = Date.now() + lane.remaining * 1000;
+    lane.interval = setInterval(() => tickLane(id), 500);
+    scheduleStageNotifications(lane.stage, lane.remaining, lane, id);
   }
   renderQueue();
+  persistRuntime();
   haptic('light');
 }
-
 function cancelLane(id) {
   const lane = queue[id];
   if (!lane) return;
   clearInterval(lane.interval);
+  lane.running = false;
+  lane.deadline = 0;
+  clearScheduledNotifications(lane);
+  removeConfirmation('lane', id);
   delete queue[id];
   renderQueue();
+  showNextConfirmation();
+  persistRuntime();
   haptic('medium');
 }
-
 function finishLane(id) {
   const lane = queue[id];
   if (!lane) return;
   clearInterval(lane.interval);
-  lane.stage = 4; // done
+  lane.interval = null;
+  lane.running = false;
+  lane.paused = false;
+  lane.deadline = 0;
+  lane.pendingStage = undefined;
+  lane.stage = 4;
+  clearScheduledNotifications(lane);
   renderQueue();
+  persistRuntime();
   haptic('heavy');
 }
-
 function showLaneConfirmOverlay(id, nextIdx) {
   const lane = queue[id];
   if (!lane) return;
-  const STAGES_LANE = ['sideA', 'sideB', 'finish', 'rest'];
-  while (nextIdx < STAGES_LANE.length && lane.times[STAGES_LANE[nextIdx]] <= 0) nextIdx++;
-  if (nextIdx >= STAGES_LANE.length) { finishLane(id); return; }
-  cook.pendingLaneId = id;
-  cook.pendingLaneStage = nextIdx;
-  cook.pendingIsLane = true;
-  const c = STAGE_CONFIRM[nextIdx - 1] || STAGE_CONFIRM[0];
-  $('confirm-eyebrow').textContent = `${lane.label} · stage ${nextIdx} complete`;
-  $('confirm-title').innerHTML = `<em>${c.title}</em>`;
-  $('confirm-sub').textContent = c.sub;
-  $('btn-confirm-action').textContent = c.action;
-  $('confirm-overlay').classList.add('open');
-  haptic('heavy');
+  while (nextIdx < STAGES.length && lane.times[STAGES[nextIdx]] <= 0) nextIdx++;
+  lane.pendingStage = nextIdx;
+  enqueueConfirmation('lane', id);
 }
 
 /* ─── AUDIO ALARM ───────────────────────────────────────────────── */
@@ -1193,6 +1434,64 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+/* Keep both sheets keyboard-accessible as their open state changes. A stage
+   acknowledgement remains explicit; Escape may dismiss only the save sheet. */
+function setupDialogs() {
+  const dialogs = [$('confirm-overlay'), $('save-modal')];
+  const previousFocus = new Map();
+  const isOpen = dialog => dialog.classList.contains('open');
+  const focusable = dialog => [...dialog.querySelectorAll('button, input, [tabindex="0"], a[href]')]
+    .filter(element => !element.disabled && element.getClientRects().length);
+  const update = dialog => {
+    const current = dialogs.find(isOpen);
+    // Release inert before restoring focus, or the browser rejects focus().
+    [...document.body.children].forEach(element => {
+      if (!['SCRIPT', 'STYLE'].includes(element.tagName)) {
+        element.inert = !!current && element !== current && !element.contains(current) && element.id !== 'toast';
+      }
+    });
+    const open = isOpen(dialog);
+    if (open && !previousFocus.has(dialog)) {
+      previousFocus.set(dialog, document.activeElement);
+      (dialog.id === 'save-modal' ? $('fav-name-input') : $('btn-confirm-action')).focus();
+    } else if (!open && previousFocus.has(dialog)) {
+      const previous = previousFocus.get(dialog);
+      previousFocus.delete(dialog);
+      if (previous?.isConnected && previous !== document.body && previous.tabIndex >= 0 && !previous.disabled && previous.getClientRects().length) previous.focus();
+      else (cook.active ? $('btn-cancel') : $('tab-timer')).focus();
+    }
+  };
+  dialogs.forEach(dialog => {
+    new MutationObserver(() => update(dialog)).observe(dialog, { attributes: true, attributeFilter: ['class'] });
+    dialog.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (dialog.id === 'save-modal') $('btn-cancel-save').click();
+      }
+      if (event.key !== 'Tab') return;
+      const controls = focusable(dialog);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
+  });
+  document.addEventListener('focusin', event => {
+    const dialog = dialogs.find(isOpen);
+    if (dialog && !dialog.contains(event.target)) (focusable(dialog)[0] || dialog).focus();
+  });
+  document.querySelectorAll('.tab-btn').forEach(button => {
+    button.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const tabs = [...document.querySelectorAll('.tab-btn')];
+      const index = tabs.indexOf(button);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 :
+        (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      tabs[next].click(); tabs[next].focus();
+    });
+  });
+}
+
 /* ─── BOOT ──────────────────────────────────────────────────────── */
 async function boot() {
   buildProteinPicker();
@@ -1202,6 +1501,7 @@ async function boot() {
   setupEnvToggles();
   setupHowdPrompt();
   setupSaveModal();
+  setupDialogs();
 
   // Tabs
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -1215,7 +1515,7 @@ async function boot() {
   $('btn-cancel').addEventListener('click', cancelCook);
   $('btn-confirm-action').addEventListener('click', confirmStageAdvance);
   $('btn-confirm-snooze').addEventListener('click', snoozeStage);
-  $('alarm-banner').addEventListener('click', stopAlarm);
+  $('alarm-banner').addEventListener('click', () => { stopAlarm(); showNextConfirmation(); });
 
   // Env disclosure (collapsible cold weather + altitude)
   $('env-toggle').addEventListener('click', () => {
@@ -1224,8 +1524,24 @@ async function boot() {
     $('env-content').classList.toggle('hidden', isOpen);
   });
 
+  switchTab('timer');
+
   // Load persisted state
   await persistLoad();
+  await restoreRuntime();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') reconcileTimers();
+    else persistRuntime();
+  });
+  window.addEventListener('pageshow', reconcileTimers);
+  window.addEventListener('pagehide', persistRuntime);
+  const native = window.Capacitor?.Plugins?.GrillMasterNative;
+  if (native) {
+    try {
+      await native.addListener('route', handleNativeRoute);
+      handleNativeRoute(await native.consumeRoute());
+    } catch { /* App remains usable when native routing is unavailable. */ }
+  }
 
   // Folio: count of entries
   $('folio').textContent = `№ ${String(log.length + 1).padStart(3, '0')}`;
@@ -1239,4 +1555,4 @@ if (document.readyState === 'loading') {
 }
 
 // Expose for tests
-window.gm = { state, times, cook, log, MEAT_DB, ICONS };
+window.gm = { state, times, cook, get log() { return log; }, queue, MEAT_DB, ICONS, reconcileTimers };

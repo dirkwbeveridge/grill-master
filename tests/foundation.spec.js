@@ -155,8 +155,10 @@ test.describe('Foundation', () => {
   test('Temp tab shows expanded doneness reference + USDA + Pro Tips', async ({ page }) => {
     await page.goto('/');
     await page.locator('#tab-temp').click();
-    // Intro paragraph
-    await expect(page.locator('.temp-intro')).toContainText('Trust a probe, not a guess');
+    // Safety guidance distinguishes minimum temperatures from steak preferences.
+    await expect(page.locator('.temp-intro').first()).toContainText('food thermometer');
+    await expect(page.locator('.temp-intro').first()).toContainText('cannot confirm food safety');
+    await expect(page.locator('.temp-intro').last()).toContainText('below USDA guidance');
     // Doneness card: Rare 120-125°F with Celsius
     await expect(page.locator('.temp-card').filter({ hasText: 'Rare' }).first()).toBeVisible();
     await expect(page.locator('.temp-card').filter({ hasText: '49–52°C' })).toBeVisible();
@@ -165,10 +167,11 @@ test.describe('Foundation', () => {
     // USDA card
     await expect(page.locator('.usda-card')).toBeVisible();
     await expect(page.locator('.usda-card')).toContainText('165°F');
-    await expect(page.locator('.usda-card')).toContainText('All Poultry');
+    await expect(page.locator('.usda-card')).toContainText('All poultry, including turkey burgers');
     // Pro Tips card
     await expect(page.locator('.tips-card')).toBeVisible();
-    await expect(page.locator('.tips-card')).toContainText('Pull 5°F early');
+    await expect(page.locator('.tips-card')).toContainText('Confirm poultry reaches 165°F');
+    await expect(page.locator('.tips-card')).toContainText('ground beef, pork or lamb reaches 160°F');
     await expect(page.locator('.tips-card')).toContainText('Pat dry before grilling');
   });
 

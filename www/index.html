@@ -2,21 +2,19 @@
 <html lang="en" data-theme="charred">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#0f0a06">
-  <meta name="description" content="Science-backed grilling times. A pitmaster's notebook.">
+  <meta name="description" content="Grilling timer and cook log. A pitmaster's notebook.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Grill Master">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="icon-1024.png">
   <title>Grill Master</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500;1,6..72,600&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to cooking controls</a>
 
 <div class="app-shell">
 
@@ -35,7 +33,7 @@
   </header>
 
   <!-- ══════ MAIN ══════ -->
-  <main class="content">
+  <main class="content" id="main-content" tabindex="-1">
 
     <!-- ═══ TIMER TAB ═══ -->
     <section class="tab-panel active" id="panel-timer" role="tabpanel" aria-labelledby="tab-timer">
@@ -50,22 +48,22 @@
         <!-- Grill type (Gas / Charcoal) -->
         <div>
           <div class="q-label"><span>Grill</span><span class="ans" id="ans-grill">Gas</span></div>
-          <div class="pills" id="grill-pills">
-            <button class="pill active" data-grill="gas">Gas</button>
-            <button class="pill" data-grill="charcoal">Charcoal</button>
+          <div class="pills" id="grill-pills" role="group" aria-label="Grill type">
+            <button class="pill active" data-grill="gas" aria-pressed="true">Gas</button>
+            <button class="pill" data-grill="charcoal" aria-pressed="false">Charcoal</button>
           </div>
         </div>
 
         <!-- Protein (Butcher Chart icons) -->
-        <div>
+        <div class="protein-section">
           <div class="q-label"><span>Protein</span><span class="ans" id="ans-protein">—</span></div>
-          <div class="protein-grid" id="protein-grid"></div>
+          <div class="protein-grid" id="protein-grid" role="group" aria-label="Protein"></div>
         </div>
 
         <!-- Cut -->
         <div id="sect-cut" class="hidden">
           <div class="q-label"><span>Cut</span><span class="ans" id="ans-cut">—</span></div>
-          <div class="pills" id="cut-pills"></div>
+          <div class="pills" id="cut-pills" role="group" aria-label="Cut"></div>
         </div>
 
         <!-- Thickness -->
@@ -84,16 +82,16 @@
         <!-- Heat -->
         <div id="sect-heat" class="hidden">
           <div class="q-label"><span>Heat</span><span class="ans" id="ans-heat">—</span></div>
-          <div class="pills heat-pills" id="heat-pills">
-            <button class="pill pill-stack" data-heat="medium" data-factor="1.0"><span class="pill-main">Medium</span><span class="pill-sub">375–450°F</span></button>
-            <button class="pill pill-stack" data-heat="high" data-factor="1.1"><span class="pill-main">High</span><span class="pill-sub">450–550°F</span></button>
+          <div class="pills heat-pills" id="heat-pills" role="group" aria-label="Heat level">
+            <button class="pill pill-stack" data-heat="medium" aria-pressed="false" data-factor="1.0"><span class="pill-main">Medium</span><span class="pill-sub">375–450°F</span></button>
+            <button class="pill pill-stack" data-heat="high" aria-pressed="false" data-factor="1.1"><span class="pill-main">High</span><span class="pill-sub">450–550°F</span></button>
           </div>
         </div>
 
         <!-- Doneness -->
         <div id="sect-doneness" class="hidden">
           <div class="q-label"><span>Doneness</span><span class="ans" id="ans-doneness">—</span></div>
-          <div class="pills" id="doneness-pills"></div>
+          <div class="pills" id="doneness-pills" role="group" aria-label="Doneness"></div>
         </div>
 
         <!-- Environment (collapsible — rarely set) -->
@@ -142,11 +140,11 @@
 
         <div class="timer-block">
           <div class="timer-stage-small" id="timer-stage-small">Side A</div>
-          <div class="timer-num" id="timer-display">0:00</div>
+          <div class="timer-num" id="timer-display" role="timer" aria-label="Time remaining">0:00</div>
           <div class="timer-instruction" id="timer-instruction">Place on hot grill. Don't move it.</div>
         </div>
 
-        <div class="timer-progress" id="timer-progress">
+        <div class="timer-progress" id="timer-progress" aria-hidden="true">
           <span data-stage="0"></span>
           <span data-stage="1"></span>
           <span data-stage="2"></span>
@@ -174,7 +172,7 @@
         <!-- "How'd it land?" prompt (shown after cook completes) -->
         <div id="howd-prompt" class="howd-prompt hidden">
           <div class="label">How'd it land?</div>
-          <div class="howd-options">
+          <div class="howd-options" role="group" aria-label="Rate this cook">
             <button data-rating="under">Underdone</button>
             <button data-rating="right">Right</button>
             <button data-rating="over">Overdone</button>
@@ -213,56 +211,11 @@
         <h2 class="title">The <em>numbers</em>.</h2>
       </div>
 
-      <p class="temp-intro">Trust a probe, not a guess. These are the internal temperatures and visual cues for each level of doneness. Pull the meat 5°F before target — it rises while resting.</p>
-
-      <!-- Doneness cards -->
-      <div class="temp-card">
-        <div class="temp-card-head">
-          <div class="temp-swatch lg" style="background:#5a1a14;"></div>
-          <div>
-            <div class="temp-card-name">Rare</div>
-            <div class="temp-card-range">120–125°F <span class="celsius">(49–52°C)</span></div>
-          </div>
-        </div>
-        <p class="temp-card-desc">Cool, bright red center. Silky texture. Touch test: press your cheek — that's how it yields.</p>
-      </div>
-
-      <div class="temp-card">
-        <div class="temp-card-head">
-          <div class="temp-swatch lg" style="background:#822818;"></div>
-          <div>
-            <div class="temp-card-name">Medium-Rare</div>
-            <div class="temp-card-range">130–135°F <span class="celsius">(54–57°C)</span></div>
-          </div>
-        </div>
-        <p class="temp-card-desc">Warm, pink-red center. Slightly firmer, juicy. The preferred choice for most steaks. Touch: fingertip to thumb.</p>
-      </div>
-
-      <div class="temp-card">
-        <div class="temp-card-head">
-          <div class="temp-swatch lg" style="background:#a04812;"></div>
-          <div>
-            <div class="temp-card-name">Medium</div>
-            <div class="temp-card-range">140–145°F <span class="celsius">(60–63°C)</span></div>
-          </div>
-        </div>
-        <p class="temp-card-desc">Pink throughout, brown outer band. Firm but still moist. Touch: middle finger to thumb.</p>
-      </div>
-
-      <div class="temp-card">
-        <div class="temp-card-head">
-          <div class="temp-swatch lg" style="background:#c87044;"></div>
-          <div>
-            <div class="temp-card-name">Well Done</div>
-            <div class="temp-card-range">160°F+ <span class="celsius">(71°C+)</span></div>
-          </div>
-        </div>
-        <p class="temp-card-desc">No pink. Fully browned throughout. Firmer texture. Touch: ring finger to thumb (ball of hand is tense).</p>
-      </div>
+      <p class="temp-intro">Check the thickest part with a food thermometer, away from bone or fat. Timers estimate cooking time; they cannot confirm food safety. Use the minimum temperatures below before serving.</p>
 
       <!-- USDA Safe Temps card -->
-      <div class="usda-card">
-        <div class="card-eyebrow">USDA Minimum Safe Temps</div>
+      <section class="usda-card" aria-labelledby="safe-temp-heading">
+        <h3 class="card-eyebrow" id="safe-temp-heading">USDA Minimum Safe Temps</h3>
         <div class="usda-row">
           <span class="usda-protein">Beef, Lamb (whole cuts)</span>
           <span class="usda-temp">145°F + 3 min rest</span>
@@ -272,38 +225,92 @@
           <span class="usda-temp">145°F + 3 min rest</span>
         </div>
         <div class="usda-row">
-          <span class="usda-protein">Ground Meat</span>
+          <span class="usda-protein">Ground beef, pork &amp; lamb</span>
           <span class="usda-temp">160°F</span>
         </div>
         <div class="usda-row">
-          <span class="usda-protein">All Poultry</span>
+          <span class="usda-protein">All poultry, including turkey burgers</span>
           <span class="usda-temp">165°F</span>
         </div>
         <div class="usda-row">
           <span class="usda-protein">Fish / Seafood</span>
           <span class="usda-temp">145°F</span>
         </div>
+      </section>
+
+      <h3 class="guide-heading">Steak doneness</h3>
+      <p class="temp-intro">These descriptions are for whole-cut steak preferences. Any temperature below 145°F is below USDA guidance. They do not apply to poultry or ground meat.</p>
+      <div class="temp-doneness-grid">
+      <!-- Doneness cards -->
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#5a1a14;"></div>
+          <div>
+            <h4 class="temp-card-name">Rare</h4>
+            <div class="temp-card-range">120–125°F <span class="celsius">(49–52°C)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">Cool, bright red center. Silky texture. Color and touch cannot confirm a safe temperature.</p>
+      </div>
+
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#822818;"></div>
+          <div>
+            <h4 class="temp-card-name">Medium-Rare</h4>
+            <div class="temp-card-range">130–135°F <span class="celsius">(54–57°C)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">Warm, pink-red center. Slightly firmer, juicy. Below the USDA minimum for whole cuts.</p>
+      </div>
+
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#a04812;"></div>
+          <div>
+            <h4 class="temp-card-name">Medium</h4>
+            <div class="temp-card-range">140–145°F <span class="celsius">(60–63°C)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">Pink throughout, brown outer band. Firm but still moist. For whole cuts, reach at least 145°F and rest 3 minutes.</p>
+      </div>
+
+      <div class="temp-card">
+        <div class="temp-card-head">
+          <div class="temp-swatch lg" style="background:#c87044;"></div>
+          <div>
+            <h4 class="temp-card-name">Well Done</h4>
+            <div class="temp-card-range">160°F+ <span class="celsius">(71°C+)</span></div>
+          </div>
+        </div>
+        <p class="temp-card-desc">No pink. Fully browned throughout. Firmer texture. Confirm temperature with a thermometer.</p>
+      </div>
+
       </div>
 
       <!-- Pro Tips card -->
       <div class="tips-card">
-        <div class="card-eyebrow">Pro Tips</div>
+        <h3 class="card-eyebrow">At the grill</h3>
         <ul class="tips-list">
           <li>Insert probe into the thickest part, away from bone or fat</li>
-          <li>Pull 5°F early — carryover cooking raises temp while resting</li>
-          <li>Rest 5 min minimum (10 min for thick cuts). Cover loose with foil</li>
+          <li>Carryover heat varies by cut and thickness. Confirm poultry reaches 165°F and ground beef, pork or lamb reaches 160°F before removing from heat</li>
+          <li>Whole cuts of beef, pork and lamb need 145°F followed by at least 3 minutes of rest</li>
           <li>Pat dry before grilling — steam is the enemy of a good sear</li>
-          <li>Room-temp meat (30 min out of fridge) cooks more evenly</li>
+          <li>Keep meat refrigerated until preparation. Avoid leaving it out for more than 2 hours, or 1 hour above 90°F</li>
           <li>Don't press the meat — you're squeezing out the juices</li>
         </ul>
       </div>
     </section>
 
   </main>
+  <footer class="app-footer" aria-label="Help and policies">
+    <a href="https://dirkwbeveridge.github.io/grill-master/support/" target="_blank" rel="noopener noreferrer">Support <span class="sr-only">(opens in browser)</span></a>
+    <a href="https://dirkwbeveridge.github.io/grill-master/privacy/" target="_blank" rel="noopener noreferrer">Privacy <span class="sr-only">(opens in browser)</span></a>
+  </footer>
 </div>
 
 <!-- ══ STAGE CONFIRM OVERLAY ══ -->
-<div class="confirm-overlay" id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+<div class="confirm-overlay" id="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-sub" tabindex="-1">
   <div class="confirm-sheet">
     <div class="confirm-eyebrow" id="confirm-eyebrow">Stage Change</div>
     <h2 class="confirm-title" id="confirm-title"><em>Flip.</em></h2>
@@ -316,12 +323,13 @@
 </div>
 
 <!-- ══ SAVE MODAL (after cook completes) ══ -->
-<div class="modal-backdrop" id="save-modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title">
+<div class="modal-backdrop" id="save-modal" role="dialog" aria-modal="true" aria-labelledby="save-modal-title" aria-describedby="save-modal-description" tabindex="-1">
   <div class="modal-sheet">
     <div class="modal-eyebrow">Log this cook</div>
     <h2 class="modal-title" id="save-modal-title">Name it.</h2>
-    <p class="modal-sub">Saturday ribeye. Mom's birthday brisket. Whatever you'll remember.</p>
-    <input type="text" class="modal-input" id="fav-name-input" placeholder="Name this cook" maxlength="40">
+    <p class="modal-sub" id="save-modal-description">Saturday ribeye. Mom's birthday brisket. Whatever you'll remember.</p>
+    <label class="input-label" for="fav-name-input">Cook name <span>(optional)</span></label>
+    <input type="text" class="modal-input" id="fav-name-input" autocomplete="off" placeholder="Name this cook" maxlength="40">
     <div class="modal-actions">
       <button class="btn-cancel" id="btn-cancel-save">Skip</button>
       <button class="btn-save" id="btn-confirm-save">Log it</button>
@@ -333,7 +341,7 @@
 <div class="toast" id="toast" aria-live="polite">Logged</div>
 
 <!-- ══ ALARM BANNER ══ -->
-<div class="alarm-banner" id="alarm-banner" role="alert" aria-live="assertive">Flip — Tap to confirm</div>
+<button type="button" class="alarm-banner" id="alarm-banner" aria-live="assertive">Flip — Tap to confirm</button>
 
 <script src="app.js" type="module"></script>
 </body>
