@@ -33,22 +33,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx cap sync ios
-      - name: Validate compiled iPhone and iPad app before signing
+      - name: Compile the unsigned simulator app before signing
+        env:
+          CAPTURE_SCREENSHOTS: '0'
         run: bash scripts/release/validate-ios.sh
-      - uses: actions/upload-artifact@v4
-        with:
-          name: automatic-release-native-screenshots
-          path: native-screenshots/
-          if-no-files-found: error
-          retention-days: 14
-      - name: Retain rejected blank captures separately for diagnosis
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-ios-capture-diagnostics
-          path: native-capture-diagnostics/
-          if-no-files-found: ignore
-          retention-days: 14
   release:
     needs: validate
     runs-on: macos-15

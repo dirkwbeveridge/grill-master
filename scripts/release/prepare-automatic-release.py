@@ -24,7 +24,7 @@ SPEC.loader.exec_module(inventory)
 ROOT = Path(__file__).resolve().parents[2]
 MAIN = "com.dbeveridge.grillmaster"
 WIDGET = MAIN + ".widgets"
-GROUP = "group.com.dirkbeveridge.grillmaster"
+GROUP = "group.com.dbeveridge.grillmaster"
 DEFAULT_NOTES = "Validate cooking timers, background reminders, Live Activities, and iPhone/iPad layouts."
 MESSAGES = {
     "unsafe_directory": "Release files require a private, owned directory outside the checkout.",

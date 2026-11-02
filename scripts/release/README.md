@@ -13,10 +13,12 @@ the secret's legacy name does not require Base64.
 
 The exact App Store Connect app must exist for `com.dbeveridge.grillmaster`.
 Both it and `com.dbeveridge.grillmaster.widgets` must have the shared group
-`group.com.dirkbeveridge.grillmaster` associated. The owner reports these portal
+`group.com.dbeveridge.grillmaster` associated. The owner reports these portal
 steps complete; API visibility and signed entitlements must independently confirm them.
 
-Unsigned native validation runs first. The release job then checks the app record
+Unsigned simulator compilation runs first. Store screenshots run in the separate
+`iOS native validation` workflow and still require visual acceptance before an App
+Store submission; they are not required for an internal TestFlight upload. The release job then checks the app record
 and unused build number before creating a temporary keychain or requesting signing.
 Xcode attempts automatic signing once using the API key. Existing certificate
 metadata does not supply its private key, so four secrets are not a guarantee of
@@ -32,7 +34,7 @@ published and are removed from the ephemeral runner at exit.
 
 ## Manual signing fallback (only if automatic signing requires it)
 
-1. Create/register the App Store Connect app for `com.dbeveridge.grillmaster` and extension identifier `com.dbeveridge.grillmaster.widgets` in the same Apple Developer team. Enable the shared App Group `group.com.dirkbeveridge.grillmaster` on both identifiers; generate fresh profiles after capability changes.
+1. Create/register the App Store Connect app for `com.dbeveridge.grillmaster` and extension identifier `com.dbeveridge.grillmaster.widgets` in the same Apple Developer team. Enable the shared App Group `group.com.dbeveridge.grillmaster` on both identifiers; generate fresh profiles after capability changes.
 2. Generate two **App Store distribution** provisioning profiles, one per identifier. Development, ad hoc, and enterprise profiles are rejected. Both profiles must include the shared App Group and match the distribution certificate and team.
 3. Export the Apple Distribution certificate **with its private key** as a password-protected `.p12`. This is separate from the App Store Connect API `.p8` key.
 4. Create an App Store Connect API key authorized to upload builds and manage TestFlight metadata for this app (App Manager access is appropriate). Keep the `.p8` outside the checkout and outside synced folders. Record its Key ID and Issuer ID privately. Do not paste these into issues or workflow inputs.

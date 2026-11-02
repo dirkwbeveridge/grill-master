@@ -16,7 +16,7 @@ struct CookSnapshot: Codable {
 }
 
 enum CookSharedStore {
-    static let appGroup = "group.com.dirkbeveridge.grillmaster"
+    static let appGroup = "group.com.dbeveridge.grillmaster"
     static let widgetKind = "GrillMasterCook"
     static let cookKey = "currentCook.v1"
 

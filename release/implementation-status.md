@@ -37,9 +37,11 @@ The installed app keeps the short name Grill Master. Requested paid download:
   approved listing name and actual registered bundle ID `com.dbeveridge.grillmaster`
   in run 41416629827. The originally supplied bundle spellings did not match.
   Project and helpers now use that registered ID and `.widgets` for the extension.
-  The shared App Group stays `group.com.dirkbeveridge.grillmaster` pending the
-  owner's exact group confirmation; App Group names need not match bundle IDs.
-  Matching extension registration and both group associations require verification.
+  The owner confirmed shared App Group `group.com.dbeveridge.grillmaster`.
+  App/widget entitlements, shared storage, and archive verification use that exact
+  group. Both registered app IDs and the main app capability are confirmed;
+  widget capability was created and read-back verified in run 41417111557.
+  The signed archive must still establish both group associations.
 - Automatic signing uses the four existing secrets. It checks a signed archive's
   app/widget identifiers, versions, signatures, embedded profiles, and team/group
   entitlements before uploading, then verifies Apple visibility and What to Test.
