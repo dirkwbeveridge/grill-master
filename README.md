@@ -58,7 +58,7 @@ See [native validation and TestFlight setup](scripts/release/README.md) for sign
 
 ## Public documents and distribution
 
-`docs/` contains the static home, support, and privacy pages. The Pages workflow publishes this directory from `main` after GitHub Pages is configured to use GitHub Actions. These are intended production URLs; publication must be verified:
+`docs/` contains the static home, support, and privacy pages. The Pages workflow publishes this directory from `main` after GitHub Pages is configured to use GitHub Actions. GitHub reports a successful Pages deployment at these URLs. Direct cloud HTTP/content checks remain blocked by the current network policy:
 
 - https://dirkwbeveridge.github.io/grill-master/
 - https://dirkwbeveridge.github.io/grill-master/support/
