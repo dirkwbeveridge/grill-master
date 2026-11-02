@@ -16,6 +16,8 @@ import stat
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
+import io
 import zlib
 
 SOURCE_RUN = 41384119053
@@ -43,6 +45,19 @@ class InvalidCapture(ValueError):
 def require(condition, message):
     if not condition:
         raise InvalidCapture(message)
+
+
+def annotation(level, message):
+    """Escape workflow-command text; callers supply fixed reasons, never file contents."""
+    escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    print(f"::{level} title=Native capture export::{escaped}", flush=True)
+
+
+def failure_reason(exc):
+    if isinstance(exc, InvalidCapture):
+        return str(exc)
+    # OSError text may contain paths or arbitrary arguments; report only its numeric code.
+    return f"Filesystem operation failed (errno {exc.errno})"
 
 
 def reject_symlink_ancestors(path):
@@ -162,7 +177,13 @@ def validate_source(source):
     files = {name: read_regular(source / name, MAX_MANIFEST_BYTES if name.endswith(".json")
                                 else MAX_PNG_BYTES) for name in sorted(ALLOWLIST)}
     manifest = validate_manifest(files["capture-manifest.json"])
-    dimensions = {name: png_dimensions(files[name]) for name in CAPTURES}
+    dimensions = {}
+    for name in CAPTURES:
+        try:
+            dimensions[name] = png_dimensions(files[name])
+        except InvalidCapture as exc:
+            # The filename is from CAPTURES, never an untrusted artifact directory entry.
+            raise InvalidCapture(f"{name}: {exc}") from exc
     return files, manifest, dimensions
 
 
@@ -195,8 +216,10 @@ def provenance(manifest, dimensions):
     return "\n".join(lines)
 
 
-def export(source, output):
+def export(source, output, milestone=None):
     files, manifest, dimensions = validate_source(source)
+    if milestone:
+        milestone("Validator passed: allowlist, manifest, and all four PNG structures match.")
     output = Path(os.path.abspath(output))
     reject_symlink_ancestors(output)
     require(not output.exists(), "Output already exists; refusing to overwrite release evidence")
@@ -212,6 +235,8 @@ def export(source, output):
     finally:
         if staging.exists():
             shutil.rmtree(staging)
+    if milestone:
+        milestone("Export passed: four native PNGs, capture manifest, and provenance README written.")
     return dimensions
 
 
@@ -319,6 +344,39 @@ class ExportTests(unittest.TestCase):
         with self.assertRaises(InvalidCapture):
             export(self.source, self.root / "alias" / "output")
 
+    def test_annotation_escapes_command_characters(self):
+        stream = io.StringIO()
+        with patch("sys.stdout", stream):
+            annotation("error", "Fixed reason 100%\r\nnext line")
+        self.assertEqual(stream.getvalue(),
+                         "::error title=Native capture export::Fixed reason 100%25%0D%0Anext line\n")
+
+    def test_filesystem_failure_reason_does_not_include_paths_or_arguments(self):
+        error = OSError(13, "sensitive argument", "/private/test-path")
+        self.assertEqual(failure_reason(error), "Filesystem operation failed (errno 13)")
+
+    def test_cli_emits_annotation_for_rejected_artifact(self):
+        (self.source / "unexpected-secret-name").write_text("sensitive fixture contents")
+        stream = io.StringIO()
+        errors = io.StringIO()
+        arguments = ["export-native-captures.py", "--source", str(self.source),
+                     "--output", str(self.root / "output")]
+        with patch("sys.argv", arguments), patch("sys.stdout", stream), patch("sys.stderr", errors):
+            with self.assertRaises(SystemExit) as result:
+                main()
+        self.assertEqual(result.exception.code, 1)
+        self.assertIn("::error title=Native capture export::Artifact files do not match the allowlist",
+                      stream.getvalue())
+        for private_value in ("unexpected-secret-name", "sensitive fixture contents", str(self.source)):
+            self.assertNotIn(private_value, stream.getvalue() + errors.getvalue())
+
+    def test_success_milestones_are_emitted_only_after_each_completed_stage(self):
+        milestones = []
+        export(self.source, self.root / "output", milestone=milestones.append)
+        self.assertEqual(len(milestones), 2)
+        self.assertTrue(milestones[0].startswith("Validator passed:"))
+        self.assertTrue(milestones[1].startswith("Export passed:"))
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -332,9 +390,11 @@ def main():
         return 0 if result.wasSuccessful() else 1
     parser.error("--source and --output are required") if args.source is None or args.output is None else None
     try:
-        dimensions = export(args.source, args.output)
+        dimensions = export(args.source, args.output, milestone=lambda message: annotation("notice", message))
     except (InvalidCapture, OSError) as exc:
-        parser.exit(1, f"Capture export rejected: {exc}\n")
+        reason = failure_reason(exc)
+        annotation("error", reason)
+        parser.exit(1, f"Capture export rejected: {reason}\n")
     print(f"Validated and exported {len(dimensions)} native PNGs, capture-manifest.json, and README.md.")
     for name, (width, height) in dimensions.items():
         print(f"{name}: {width} x {height}")

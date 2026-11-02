@@ -38,36 +38,54 @@ jobs:
         with:
           github-token: ${{ github.token }}
           script: |
-            const { data: run } = await github.rest.actions.getWorkflowRun({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: 41384119053,
-            });
-            const expectedRepository = 'dirkwbeveridge/grill-master';
-            if (`${context.repo.owner}/${context.repo.repo}` !== expectedRepository ||
-                run.repository?.full_name !== expectedRepository ||
-                run.head_repository?.full_name !== expectedRepository ||
-                run.head_sha !== 'cb52b374bd21963bf390f5917cfa2cb2520bb0cc' ||
-                run.status !== 'completed' || run.conclusion !== 'success' ||
-                run.path?.split('@')[0] !== '.github/workflows/ios-validate.yml') {
-              core.setFailed('Source run does not match the successful native capture provenance.');
+            let run;
+            try {
+              const response = await github.rest.actions.getWorkflowRun({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: 41384119053,
+              });
+              run = response.data;
+            } catch {
+              core.setFailed('Source verification request failed; check Actions read permission and source-run availability.');
+              return;
             }
+            const expectedRepository = 'dirkwbeveridge/grill-master';
+            const checks = [
+              ['workflow repository', `${context.repo.owner}/${context.repo.repo}` === expectedRepository],
+              ['source repository', run.repository?.full_name === expectedRepository],
+              ['source head repository', run.head_repository?.full_name === expectedRepository],
+              ['source commit', run.head_sha === 'cb52b374bd21963bf390f5917cfa2cb2520bb0cc'],
+              ['source completion', run.status === 'completed'],
+              ['source success', run.conclusion === 'success'],
+              ['source workflow path', run.path?.split('@')[0] === '.github/workflows/ios-validate.yml'],
+            ];
+            const failed = checks.filter(([, passed]) => !passed).map(([label]) => label);
+            if (failed.length) {
+              core.setFailed(`Source verification failed: ${failed.join(', ')}.`);
+              return;
+            }
+            core.notice('Source verification passed: successful native source run, repository, workflow, and commit match.');
       - name: Refuse an existing output branch
         working-directory: output-repository
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          stage='output branch preflight'
+          trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
           if git ls-remote --exit-code --heads origin refs/heads/codex/native-screenshots; then
-            echo 'Output branch already exists; refusing to modify it.' >&2
+            echo '::error title=Native capture export::Output branch already exists; refusing to modify it.' >&2
             exit 1
           else
             branch_status=$?
             if [[ "$branch_status" != 2 ]]; then
-              echo 'Could not establish whether the output branch exists.' >&2
+              echo '::error title=Native capture export::Output branch preflight could not determine remote branch availability.' >&2
               exit "$branch_status"
             fi
           fi
+          echo '::notice title=Native capture export::Output branch preflight passed: no existing screenshot branch.'
       - name: Download only the unsigned native screenshot artifact
+        id: download_captures
         uses: actions/download-artifact@v4
         with:
           name: native-ios-screenshots
@@ -75,13 +93,35 @@ jobs:
           repository: ${{ github.repository }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/native-capture-input
+      - name: Report artifact download result
+        if: ${{ always() && (steps.download_captures.outcome == 'success' || steps.download_captures.outcome == 'failure') }}
+        shell: bash
+        env:
+          DOWNLOAD_OUTCOME: ${{ steps.download_captures.outcome }}
+        run: |
+          set -Eeuo pipefail
+          stage='artifact download result'
+          trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
+          if [[ "$DOWNLOAD_OUTCOME" == success ]]; then
+            echo '::notice title=Native capture export::Download passed: requested native screenshot artifact is available for validation.'
+          else
+            echo '::error title=Native capture export::Native screenshot artifact download failed; no files were exported.' >&2
+            exit 1
+          fi
       - name: Test the offline artifact validator
         shell: bash
-        run: python3 exporter/scripts/release/export-native-captures.py --self-test
+        run: |
+          set -Eeuo pipefail
+          stage='offline validator self-test'
+          trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
+          python3 exporter/scripts/release/export-native-captures.py --self-test
+          echo '::notice title=Native capture export::Offline validator self-tests passed.'
       - name: Validate and export the allowlisted native evidence
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          stage='artifact validation and export'
+          trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
           python3 exporter/scripts/release/export-native-captures.py \
             --source "$RUNNER_TEMP/native-capture-input" \
             --output "$GITHUB_WORKSPACE/output-repository/release/native-screenshots"
@@ -89,9 +129,13 @@ jobs:
         working-directory: output-repository
         shell: bash
         run: |
-          set -euo pipefail
+          set -Eeuo pipefail
+          stage='creating output branch'
+          trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
           git switch --create codex/native-screenshots
+          stage='staging native evidence'
           git add -- release/native-screenshots
+          stage='validating staged paths'
           python3 - <<'PY'
           import subprocess
           expected = {
@@ -107,20 +151,26 @@ jobs:
           if actual != expected:
               raise SystemExit('Refusing to commit unexpected or missing paths.')
           PY
+          stage='committing native evidence'
           git -c user.name='github-actions[bot]' \
             -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
             commit -m 'Preserve native iPhone and iPad simulator captures'
+          echo '::notice title=Native capture export::Commit passed: only the six expected native evidence files were committed on the new output branch.'
+          stage='checking output branch before push'
           if git ls-remote --exit-code --heads origin refs/heads/codex/native-screenshots; then
-            echo 'Output branch appeared during export; refusing to modify it.' >&2
+            echo '::error title=Native capture export::Output branch appeared during export; refusing to modify it.' >&2
             exit 1
           else
             branch_status=$?
             if [[ "$branch_status" != 2 ]]; then
-              echo 'Could not establish whether the output branch exists before push.' >&2
+              echo '::error title=Native capture export::Could not determine output branch availability before push.' >&2
               exit "$branch_status"
             fi
           fi
+          stage='pushing native evidence'
           git push origin HEAD:refs/heads/codex/native-screenshots
+          echo '::notice title=Native capture export::Push passed: new native screenshot branch published without force.'
+          stage='writing run summary'
           {
             echo '## Native simulator evidence exported'
             echo
