@@ -9,8 +9,8 @@ This checklist separates prepared repository material from account answers and n
 - [x] A GitHub Actions Pages workflow publishes only `docs/`, on changes to `main` or manual workflow dispatch. It does not publish the application bundle or sell the app.
 - [x] Source review confirms external fonts were removed. See [privacy source inventory](privacy-source-inventory.md); final binary and native traffic verification remain pending.
 - [ ] Confirm timer/queue persistence matches the policy’s local session-storage description.
-- [ ] Enable repository Pages with **GitHub Actions** as the source. Confirm the `github-pages` environment permits the intended deployment branch and the account/repository plan supports Pages.
-- [ ] Complete an authorized deployment; verify all three public pages and the local stylesheet return successfully over HTTPS at the intended subpath.
+- [x] Enable repository Pages with **GitHub Actions** as the source. Confirm the `github-pages` environment permits the intended deployment branch and the account/repository plan supports Pages.
+- [x] Complete an authorized deployment; all three pages and stylesheet passed live HTTPS/content checks in run 41419214890.
 - [ ] Verify in-app Support and Privacy links open these exact production URLs.
 - [ ] Release owner: confirm the legal operator/rights holder and jurisdiction-specific privacy notice requirements. **Legal operator name/address and a monitored private privacy/contact email are PENDING**; add any legally required fields to the policy before launch. GitHub Issues is public and is not a private contact channel.
 - [ ] Confirm the person operating the app can respond to privacy/support requests and that public support meets applicable App Store requirements. No response-time promise has been made.

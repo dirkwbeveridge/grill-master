@@ -16,6 +16,11 @@ Validated November 1, 2026 against the prepared `docs/` files. These checks conc
 
 The bundled Playwright Chromium executable was absent; verification used the installed `/usr/bin/chromium`. The Impeccable context/detector launcher is absent, so no detector result is claimed. Existing source palette/brand context was read directly. Native VoiceOver and iOS Safari testing are not claimed.
 
-A successful public GitHub Pages deployment and HTTP checks against the production URLs remain pending. External destination availability was not established by the local-link checks. The Pages workflow needs repository Pages configured for GitHub Actions and any deployment-branch/environment protection requirements satisfied. Network/API access and the release owner's GitHub authority determine whether those settings can be completed.
+Public deployment and content verification passed on November 2, 2026 in
+[run 41419214890](https://github.com/dirkwbeveridge/grill-master/actions/runs/41419214890).
+The workflow confirmed Pages uses GitHub Actions, deployed only `docs/`, and
+verified HTTPS home, support, privacy, and stylesheet responses and expected content.
+Direct HTTP checks from this cloud instance remain restricted; these live checks
+ran on the normal GitHub deployment runner.
 
 The final signed app must still be compared with the privacy description (including local session persistence and removal of external runtime fonts), and the release owner's legal identity/private contact requirements remain pending. See the release checklist for App Store account, native evidence, signing, privacy, age-rating, and export dependencies.

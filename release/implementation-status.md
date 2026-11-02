@@ -22,17 +22,23 @@ The installed app keeps the short name Grill Master. Requested paid download:
 
 ## Current release attempt
 
-- Source/native capture guard: `13109ea86cff0b97f7a55b535c0165f72bf57456`.
-- Automatic TestFlight workflow:
-  https://github.com/dirkwbeveridge/grill-master/actions/runs/41412396529
-  This attempt failed in unsigned validation, before signing/upload started.
-  Diagnostic validation run 41413184587 confirmed simulator compilation succeeded,
-  then failed because a capture remained blank. Replacement validation is run
-  41414814002 (source 3fa30624f63067c0273aa9744ebf347ab4aee2a5).
-  It records rejected images separately and permits one bounded app relaunch.
-  The screenshot export workflow waits for that exact run, rejects failed runs,
-  and can preserve only its four validated PNGs and public provenance on
-  `codex/native-screenshots-v3`. Visual acceptance is still required.
+- Automatic TestFlight run [41418352647](https://github.com/dirkwbeveridge/grill-master/actions/runs/41418352647)
+  used source `9d924f9d4ae53e42691876ec2741329468be1e01`. Unsigned compilation
+  passed, and Apple preflight confirmed the exact app and unused build 2.
+  Xcode then stopped with an authentication/authorization error during automatic
+  signing. No upload occurred. Do not repeat the same signing attempt without
+  diagnosing or correcting that failure.
+- Read-only follow-up [41419209706](https://github.com/dirkwbeveridge/grill-master/actions/runs/41419209706)
+  confirmed API authentication, the exact app record, both bundle IDs, both App
+  Groups capabilities, and that the configured Team ID matches an accessible
+  distribution certificate. No active App Store profiles exist for either target.
+  API success does not establish that Xcode signing authentication succeeds.
+  Diagnose on a trusted Mac, or use the existing manual signing workflow with
+  securely supplied certificate/private key and two matching profiles.
+- Store screenshot capture is separate from internal TestFlight upload. Run
+  41414814002 compiled but rejected blank iPad configuration images even after
+  one relaunch. Its `native-ios-capture-diagnostics` artifact retains rejected
+  PNGs. The exporter correctly refused the failed run; no v3 set was accepted.
 - The owner supplied Apple ID 6829659639. Direct API read-back confirmed the
   approved listing name and actual registered bundle ID `com.dbeveridge.grillmaster`
   in run 41416629827. The originally supplied bundle spellings did not match.
@@ -61,19 +67,17 @@ The installed app keeps the short name Grill Master. Requested paid download:
   visual route/layout acceptance. No screenshot pixels or cook states are fabricated.
 - Browser review evidence remains under `release/evidence/web-review/` and must
   not be submitted as native App Store screenshots.
-- Pages deployments succeeded, including run 41412394164, but a competing legacy
-  branch build was observed. The workflow now verifies `build_type=workflow` and
-  checks the public home, support, privacy, and stylesheet after deployment.
-  Its attempt to change that repository setting was denied by GitHub in run
-  41412705882. Owner must select **GitHub Actions** in Settings → Pages → Source;
-  the next deployment must pass public HTTP/content checks before acceptance.
+- Pages run [41419214890](https://github.com/dirkwbeveridge/grill-master/actions/runs/41419214890)
+  verified workflow publishing as the sole source, deployed `docs/`, and passed
+  live HTTPS/content checks for home, support, privacy, and stylesheet. The public
+  site is https://dirkwbeveridge.github.io/grill-master/.
 - Direct cloud requests to GitHub API/Pages are restricted. Required network
   domains and reusable setup instructions are saved in the cloud configuration
   draft; saving a draft does not apply its policy to this instance.
 
 ## Remaining owner/account and device gates
 
-Confirm app-record visibility, Pages source, legal rights holder and monitored
+Resolve Xcode signing authentication, confirm the legal rights holder and monitored
 private privacy/support contact; complete Paid Apps agreement, tax/banking,
 trader/territory decisions, price, age/privacy/export questionnaires, and private
 App Review contact. Validate the final signed app, lock-screen/background
