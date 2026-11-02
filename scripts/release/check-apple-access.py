@@ -74,18 +74,18 @@ class Report:
 
 def tlv(data, offset=0):
     if offset + 2 > len(data):
-        raise InventoryError("malformed_key")
+        raise InventoryError("key_parse_failed")
     tag, length = data[offset:offset + 2]
     cursor = offset + 2
     if length & 0x80:
         count = length & 0x7f
         if not count or cursor + count > len(data):
-            raise InventoryError("malformed_key")
+            raise InventoryError("key_parse_failed")
         length = int.from_bytes(data[cursor:cursor + count], "big")
         cursor += count
     end = cursor + length
     if end > len(data):
-        raise InventoryError("malformed_key")
+        raise InventoryError("key_parse_failed")
     return tag, data[cursor:end], end
 
 
@@ -97,10 +97,35 @@ def validate_key(path):
                                 capture_output=True, check=True, timeout=15, input=b"").stdout
         tag, sequence, end = tlv(public)
         algorithm_tag, algorithm, _ = tlv(sequence)
-        if tag != 0x30 or end != len(public) or algorithm_tag != 0x30 or algorithm != P256_ALGORITHM:
-            raise InventoryError("malformed_key")
+        if tag != 0x30 or end != len(public) or algorithm_tag != 0x30:
+            raise InventoryError("key_parse_failed")
+        if algorithm != P256_ALGORITHM:
+            raise InventoryError("wrong_curve")
     except (OSError, subprocess.SubprocessError, ValueError):
-        raise InventoryError("malformed_key") from None
+        raise InventoryError("key_parse_failed") from None
+
+
+def decode_private_key(value):
+    """Accept PEM or copy-wrapped Base64 as data; never interpret shell syntax."""
+    text = value.strip(" \t\r\n")
+    if re.match(r"(?:\$[ \t]*)?(?:/[^ \t\r\n]*/)?(?:base64|openssl|cat|echo|printf|pbpaste|gh)(?:[ \t\r\n]|$)", text):
+        raise InventoryError("command_input")
+    if text.startswith("-----BEGIN "):
+        try:
+            key = text.encode("ascii")
+        except UnicodeEncodeError:
+            raise InventoryError("key_parse_failed") from None
+    else:
+        compact = re.sub(r"[ \t\r\n]", "", text)
+        try:
+            key = base64.b64decode(compact, validate=True)
+        except ValueError:
+            raise InventoryError("invalid_base64") from None
+    if key.startswith(b"-----BEGIN ENCRYPTED PRIVATE KEY-----"):
+        raise InventoryError("key_parse_failed")
+    if not key.startswith(b"-----BEGIN PRIVATE KEY-----"):
+        raise InventoryError("missing_pem_header")
+    return key
 
 
 @contextmanager
@@ -138,12 +163,7 @@ def key_credentials():
         raise
     except OSError:
         raise InventoryError("unsafe_temp") from None
-    try:
-        key = base64.b64decode(os.environ["ASC_PRIVATE_KEY_P8_BASE64"].strip(), validate=True)
-    except ValueError:
-        raise InventoryError("malformed_key") from None
-    if not key.startswith(b"-----BEGIN PRIVATE KEY-----") or b"-----END PRIVATE KEY-----" not in key:
-        raise InventoryError("malformed_key")
+    key = decode_private_key(os.environ["ASC_PRIVATE_KEY_P8_BASE64"])
     previous = os.environ.get("ASC_KEY_PATH")
     with tempfile.TemporaryDirectory(prefix="grillmaster-apple-inventory-", dir=temporary_root) as directory:
         path = Path(directory) / "AuthKey.p8"
@@ -287,7 +307,11 @@ def main():
         messages = {"missing_inputs": "Required credential inputs or RUNNER_TEMP are missing.",
                     "malformed_bindings": "Key ID, Issuer ID, or Team ID input format is invalid.",
                     "unsafe_temp": "RUNNER_TEMP must be an existing directory outside the checkout.",
-                    "malformed_key": "API private key input is malformed or is not an unencrypted PKCS#8 P-256 key."}
+                    "invalid_base64": "Private-key decoding failed: invalid Base64. Supply raw unencrypted PKCS#8 PEM or Base64 containing only the encoding and ASCII whitespace.",
+                    "missing_pem_header": "Private-key decoding succeeded, but the input is missing the unencrypted PKCS#8 PEM header.",
+                    "key_parse_failed": "Private-key validation failed: OpenSSL could not parse an unencrypted private key (malformed or encrypted input).",
+                    "wrong_curve": "Private-key validation failed: the key is not EC P-256 required for ES256.",
+                    "command_input": "Private-key input contains a pasted shell command instead of key data. Supply the command output or raw PEM; no command was executed."}
         report.row("Credential validation", "Failed")
         if error.kind == "malformed_bindings":
             for field in error.fields:

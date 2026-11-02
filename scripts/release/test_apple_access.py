@@ -137,14 +137,15 @@ class InventoryTests(unittest.TestCase):
         result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": "%%%not-valid-base64%%%"})
         self.assertEqual(result, 1)
         self.assertFalse(self.methods)
-        self.assertIn("API private key input is malformed", rendered)
+        self.assertIn("Private-key decoding failed: invalid Base64", rendered)
 
     def test_wrong_curve_is_rejected_and_key_directory_removed(self):
         key = self.root / "wrong-curve.pem"
         subprocess.run(["openssl", "genpkey", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-384", "-out", str(key)],
                        check=True, capture_output=True)
-        result, _ = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": base64.b64encode(key.read_bytes()).decode()})
+        result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": base64.b64encode(key.read_bytes()).decode()})
         self.assertEqual(result, 1)
+        self.assertIn("the key is not EC P-256 required for ES256", rendered)
         self.assertFalse(self.methods)
         self.assertFalse(list(self.root.glob("grillmaster-apple-inventory-*")))
         key.unlink()
@@ -153,9 +154,59 @@ class InventoryTests(unittest.TestCase):
         malformed = b"-----BEGIN PRIVATE KEY-----\nprivate-invalid-key-content\n-----END PRIVATE KEY-----\n"
         result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": base64.b64encode(malformed).decode()})
         self.assertEqual(result, 1)
+        self.assertIn("OpenSSL could not parse an unencrypted private key", rendered)
         self.assertNotIn("private-invalid-key-content", rendered)
         self.assertFalse(self.methods)
         self.assertFalse(list(self.root.glob("grillmaster-apple-inventory-*")))
+
+    def test_raw_unencrypted_pkcs8_pem_is_accepted(self):
+        result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": " \t\r\n" + self.private.decode() + "\r\n "})
+        self.assertEqual(result, 0)
+        self.assertIn("Valid unencrypted PKCS#8 P-256 key", rendered)
+        self.assertFalse(list(self.root.glob("grillmaster-apple-inventory-*")))
+
+    def test_wrapped_base64_ascii_whitespace_is_accepted(self):
+        encoded = self.environment["ASC_PRIVATE_KEY_P8_BASE64"]
+        wrapped = " \t\r\n" + " \t\r\n".join(encoded[index:index + 48] for index in range(0, len(encoded), 48)) + "\r\n "
+        result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": wrapped})
+        self.assertEqual(result, 0)
+        self.assertIn("API authentication | Accepted", rendered)
+        self.assertFalse(list(self.root.glob("grillmaster-apple-inventory-*")))
+
+    def test_decoded_input_missing_pkcs8_header_has_exact_safe_stage(self):
+        private_text = b"sensitive-non-key-content"
+        result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": base64.b64encode(private_text).decode()})
+        self.assertEqual(result, 1)
+        self.assertIn("missing the unencrypted PKCS#8 PEM header", rendered)
+        self.assertNotIn(private_text.decode(), rendered)
+        self.assertFalse(self.methods)
+
+    def test_pasted_shell_commands_are_data_and_never_executed(self):
+        marker = self.root / "command-must-not-create-this-file"
+        commands = [f"base64 -i /private/sensitive/AuthKey.p8; touch {marker}",
+                    f"/usr/bin/base64 -i /private/sensitive/AuthKey.p8 $(touch {marker})",
+                    f"$ base64 -i /private/sensitive/AuthKey.p8 | gh secret set PRIVATE"]
+        for command in commands:
+            with self.subTest(command_category="pasted command"), patch.object(inventory.subprocess, "run") as run:
+                result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": command})
+                self.assertEqual(result, 1)
+                self.assertIn("contains a pasted shell command instead of key data", rendered)
+                self.assertIn("no command was executed", rendered)
+                self.assertNotIn("/private/sensitive", rendered)
+                run.assert_not_called()
+                self.assertFalse(marker.exists())
+                self.assertFalse(list(self.root.glob("grillmaster-apple-inventory-*")))
+
+    def test_encrypted_pkcs8_is_rejected_without_prompt_or_contents(self):
+        encrypted = b"-----BEGIN ENCRYPTED PRIVATE KEY-----\nprivate-encrypted-content\n-----END ENCRYPTED PRIVATE KEY-----\n"
+        for value in (encrypted.decode(), base64.b64encode(encrypted).decode()):
+            with self.subTest(format_category="encrypted key"), patch.object(inventory.subprocess, "run") as run:
+                result, rendered = self.invoke(extra={"ASC_PRIVATE_KEY_P8_BASE64": value})
+                self.assertEqual(result, 1)
+                self.assertIn("malformed or encrypted input", rendered)
+                self.assertNotIn("private-encrypted-content", rendered)
+                run.assert_not_called()
+                self.assertFalse(list(self.root.glob("grillmaster-apple-inventory-*")))
 
     def test_protected_key_and_environment_restoration_after_failure(self):
         with patch.dict(os.environ, dict(self.environment, ASC_KEY_PATH="prior-private-path")):
