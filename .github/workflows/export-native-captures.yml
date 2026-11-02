@@ -134,7 +134,9 @@ jobs:
           trap 'failure_status=$?; printf "::error title=Native capture export::%s failed (exit %s).\n" "$stage" "$failure_status" >&2' ERR
           git switch --create codex/native-screenshots
           stage='staging native evidence'
-          git add -- release/native-screenshots
+          # These allowlisted captures are intentional release evidence, even
+          # though the general generated-screenshot directory is ignored.
+          git add --force -- release/native-screenshots
           stage='validating staged paths'
           python3 - <<'PY'
           import subprocess
