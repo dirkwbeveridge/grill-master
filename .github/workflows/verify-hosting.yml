@@ -1,0 +1,30 @@
+name: Verify public release hosting
+on:
+  push:
+    branches: [codex/verify-hosting]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Read the Pages source without changing repository settings
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const site = await github.rest.repos.getPages({
+              owner: context.repo.owner, repo: context.repo.repo
+            });
+            if (site.data.build_type !== 'workflow') {
+              core.setFailed('Pages still uses branch publishing. Owner must set Settings → Pages → Source to GitHub Actions.');
+            } else {
+              core.notice('Pages source is GitHub Actions.');
+            }
+      - name: Verify public support and privacy documents
+        run: python3 scripts/release/verify-public-site.py
